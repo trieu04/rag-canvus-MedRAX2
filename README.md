@@ -56,18 +56,18 @@ cd MedRAX
 # Install package
 pip install -e .
 ```
-<br>
 
-## Getting Started
+### Getting Started
 ```bash
 # Start the Gradio interface
 python main.py
 ```
 You need to setup the `model_dir` to directory where you want to download or already have the weights of above tools from Hugging Face. Comment out the tools that you do not have access to.
 Make sure to setup your OpenAI API key in `.env` file!
-<br>
+<br><br>
 
-## Authors and Affiliations
+
+## Authors
 - **Adibvafa Fallahpour**¹²³ (adibvafa.fallahpour@mail.utoronto.ca)
 - **Jun Ma**²³ 
 - **Alif Munim**³⁴
@@ -79,7 +79,8 @@ Make sure to setup your OpenAI API key in `.env` file!
 ³ University Health Network, Toronto, Canada  
 ⁴ Cohere For AI, Toronto, Canada  
 ⁵ Department of Laboratory Medicine and Pathobiology, University of Toronto, Toronto, Canada
-<br>
+<br><br>
+
 
 ## Citation
 If you find this work useful, please cite our paper:
