@@ -1,83 +1,102 @@
 <h1 align="center">
-🤖 MedRAX: Medical Reasoning Agent for Chest X-ray 🏥
+🤖 MedRAX: Medical Reasoning Agent for Chest X-ray
 </h1>
 <br>
 
-## Problem
-Medical professionals face significant challenges when using traditional Large Language Models (LLMs) for X-ray analysis. Standard LLMs often hallucinate, lack specialized medical imaging capabilities, and can miss critical diagnostic details. While separate tools exist for various aspects of X-ray analysis, the current fragmented approach requires doctors to juggle multiple systems, leading to inefficient workflows and potential oversights in patient care.
-<br>
-<br>
+## Abstract
+Chest X-rays (CXRs) play an integral role in driving critical decisions in disease management and patient care. While recent innovations have led to specialized models for various CXR interpretation tasks, these solutions often operate in isolation, limiting their practical utility in clinical practice. We present MedRAX, the first versatile AI agent that seamlessly integrates state-of-the-art CXR analysis tools and multimodal large language models into a unified framework. MedRAX dynamically leverages these models to address complex medical queries without requiring additional training. To rigorously evaluate its capabilities, we introduce ChestAgentBench, a comprehensive benchmark containing 2,500 complex medical queries across 7 diverse categories. Our experiments demonstrate that MedRAX achieves state-of-the-art performance compared to both open-source and proprietary models, representing a significant step toward the practical deployment of automated CXR interpretation systems.
+<br><br>
 
-## Our Solution
-MedRAX is an intelligent medical assistant that seamlessly integrates an LLM with specialized X-ray analysis tools, providing a unified interface for comprehensive X-ray analysis. Through natural conversation, medical professionals can leverage powerful tools while the system intelligently coordinates their usage behind the scenes.
 
-Our comprehensive toolset includes:
-- **ChestXRayReportGenerator**: Generates detailed, accurate medical reports from X-ray images
-- **ChestXRayClassifier**: Analyzes images for 18 different pathologies providing probability scores for each condition
-- **ChestXRaySegmentation**: Precisely segments anatomical structures
-- **MedicalVisualQA**: Answers to complex visual medical queries
-- **XRayPhraseGrounding**: Locates and visualizes specific medical findings in X-rays with bounding box precision
-- **ImageVisualizer**: Enhances and displays X-ray images for optimal viewing
-- **ChestXRayGenerator**: Generates synthetic chest X-rays for educational purposes
-- **DicomProcessor**: Handles DICOM file processing and analysis
-<br>
-
-## Technical Implementation
+## MedRAX
 MedRAX is built on a robust technical foundation:
-- **Core Architecture**: Leverages LangChain and LangGraph for sophisticated agent orchestration
-- **Language Model**: Powered by OpenAI's API for natural language understanding and generation
-- **Specialized Tools**: Integrates medical-domain fine-tuned models for various analysis tasks
-- **Interface**: Built with Gradio for an intuitive, chat-based user experience
-- **Modular Design**: Allows easy integration of additional specialized medical tools
+- **Core Architecture**: Built on LangChain and LangGraph frameworks
+- **Language Model**: Uses GPT-4o with vision capabilities as the backbone LLM
+- **Deployment**: Supports both local and cloud-based deployments
+- **Interface**: Production-ready interface built with Gradio
+- **Modular Design**: Tool-agnostic architecture allowing easy integration of new capabilities
+
+### Integrated Tools
+- **Visual QA**: Utilizes CheXagent and LLaVA-Med for complex visual understanding and medical reasoning
+- **Segmentation**: Employs MedSAM and PSPNet model trained on ChestX-Det for precise anatomical structure identification
+- **Grounding**: Uses Maira-2 for localizing specific findings in medical images
+- **Report Generation**: Implements SwinV2 Transformer trained on CheXpert Plus for detailed medical reporting
+- **Disease Classification**: Leverages DenseNet-121 from TorchXRayVision for detecting 18 pathology classes
+- **X-ray Generation**: Utilizes RoentGen for synthetic CXR generation
+- **Utilities**: Includes DICOM processing, visualization tools, and custom plotting capabilities
+
 <br>
 
-## Potential Impact
-- Accelerates X-ray analysis while maintaining high accuracy
-- Reduces the likelihood of missed diagnoses through multi-tool verification
-- Provides valuable educational support for medical students and residents
-- Offers a scalable solution for facilities with limited specialist availability
-- Improves patient outcomes through comprehensive analysis
-- Streamlines workflow for medical professionals
+## ChestAgentBench
+We introduce ChestAgentBench, a comprehensive evaluation framework with 2,500 complex medical queries across 7 categories, built from 675 expert-curated clinical cases. The benchmark evaluates complex multi-step reasoning in CXR interpretation through:
+
+- Detection
+- Classification
+- Localization
+- Comparison
+- Relationship
+- Diagnosis
+- Characterization
+
+Download the benchmark: [ChestAgentBench on Hugging Face](https://huggingface.co/datasets/wanglab/chest-agent-bench)
+
 <br>
 
-## Setup and Usage
-
+## Installation
 ### Prerequisites
-- GPU required for optimal performance
 - Python 3.8+
-- OpenAI API key
+- CUDA/GPU for best performance
 
-### Installation
-1. Clone the repository:
+### Installation Steps
 ```bash
-git clone https://github.com/yourusername/MedRAX.git
+# Clone the repository
+git clone https://github.com/bowang-lab/MedRAX.git
 cd MedRAX
-```
 
-2. Install dependencies:
-```bash
+# Install package
 pip install -e .
 ```
 
-3. Set up environment variables:
+### Getting Started
 ```bash
-echo "OPENAI_API_KEY=your_key_here" > .env
-```
-
-### Running the Application
-Start the application:
-```bash
+# Start the Gradio interface
 python main.py
 ```
-<br>
+You need to setup the `model_dir` to directory where you want to download or already have the weights of above tools from Hugging Face. Comment out the tools that you do not have access to.
+Make sure to setup your OpenAI API key in `.env` file!
+<br><br>
 
-## Developers
-- Adibvafa Fallahpour
-- Jun Ma
-- Hongwei Lyu
-<br>
+
+## Authors
+- **Adibvafa Fallahpour**¹²³ (adibvafa.fallahpour@mail.utoronto.ca)
+- **Jun Ma**²³ 
+- **Alif Munim**³⁴
+- **Hongwei Lyu**³
+- **Bo Wang**¹²³⁵
+
+¹ Department of Computer Science, University of Toronto, Toronto, Canada  
+² Vector Institute, Toronto, Canada  
+³ University Health Network, Toronto, Canada  
+⁴ Cohere For AI, Toronto, Canada  
+⁵ Department of Laboratory Medicine and Pathobiology, University of Toronto, Toronto, Canada
+<br><br>
+
+
+## Citation
+If you find this work useful, please cite our paper:
+```bibtex
+@misc{fallahpour2025medraxmedicalreasoningagent,
+      title={MedRAX: Medical Reasoning Agent for Chest X-ray}, 
+      author={Adibvafa Fallahpour and Jun Ma and Alif Munim and Hongwei Lyu and Bo Wang},
+      year={2025},
+      eprint={2502.02673},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2502.02673}, 
+}
+```
 
 ---
 <p align="center">
-Made with ❤️ in Toronto
+Made with ❤️ at University of Toronto, Vector Institute, and University Health Network
 </p>
