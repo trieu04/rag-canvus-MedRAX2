@@ -5,11 +5,12 @@
 
 ## Abstract
 Chest X-rays (CXRs) play an integral role in driving critical decisions in disease management and patient care. While recent innovations have led to specialized models for various CXR interpretation tasks, these solutions often operate in isolation, limiting their practical utility in clinical practice. We present MedRAX, the first versatile AI agent that seamlessly integrates state-of-the-art CXR analysis tools and multimodal large language models into a unified framework. MedRAX dynamically leverages these models to address complex medical queries without requiring additional training. To rigorously evaluate its capabilities, we introduce ChestAgentBench, a comprehensive benchmark containing 2,500 complex medical queries across 7 diverse categories. Our experiments demonstrate that MedRAX achieves state-of-the-art performance compared to both open-source and proprietary models, representing a significant step toward the practical deployment of automated CXR interpretation systems.
+<br>
 
 ## Technical Implementation
 MedRAX is built on a robust technical foundation:
 - **Core Architecture**: Built on LangChain and LangGraph frameworks
-- **Language Model**: Uses GPT-4 with vision capabilities as the backbone LLM
+- **Language Model**: Uses GPT-4o with vision capabilities as the backbone LLM
 - **Deployment**: Supports both local and cloud-based deployments
 - **Interface**: Production-ready interface built with Gradio
 - **Modular Design**: Tool-agnostic architecture allowing easy integration of new capabilities
@@ -22,6 +23,8 @@ MedRAX is built on a robust technical foundation:
 - **Disease Classification**: Leverages DenseNet-121 from TorchXRayVision for detecting 18 pathology classes
 - **X-ray Generation**: Utilizes RoentGen for synthetic CXR generation
 - **Utilities**: Includes DICOM processing, visualization tools, and custom plotting capabilities
+
+<br>
 
 ## ChestAgentBench
 We introduce ChestAgentBench, a comprehensive evaluation framework with 2,500 complex medical queries across 7 categories, built from 675 expert-curated clinical cases. The benchmark evaluates complex multi-step reasoning in CXR interpretation through:
@@ -36,9 +39,12 @@ We introduce ChestAgentBench, a comprehensive evaluation framework with 2,500 co
 
 Download the benchmark: [ChestAgentBench on Hugging Face](https://huggingface.co/datasets/wanglab/chest-agent-bench)
 
+<br>
+
 ## Installation
 ### Prerequisites
 - Python 3.8+
+- CUDA/GPU for best performance
 
 ### Installation Steps
 ```bash
@@ -53,8 +59,11 @@ pip install -e .
 ## Getting Started
 ```bash
 # Start the Gradio interface
-python app.py
+python main.py
 ```
+You need to setup the `model_dir` to directory where you want to download or already have the weights of above tools from Hugging Face. Comment out the tools that you do not have access to.
+Make sure to setup your OpenAI API key in `.env` file!
+<br>
 
 ## Authors and Affiliations
 - **Adibvafa Fallahpour**¹²³ (adibvafa.fallahpour@mail.utoronto.ca)
@@ -68,6 +77,7 @@ python app.py
 ³ University Health Network, Toronto, Canada  
 ⁴ Cohere For AI, Toronto, Canada  
 ⁵ Department of Laboratory Medicine and Pathobiology, University of Toronto, Toronto, Canada
+<br>
 
 ## Citation
 If you find this work useful, please cite our paper:
