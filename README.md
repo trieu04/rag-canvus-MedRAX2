@@ -1,14 +1,6 @@
 <h1 align="center">
-🤖 MedRAX: Medical Reasoning Agent for Chest X-ray 🏥
+🤖 MedRAX: Medical Reasoning Agent for Chest X-ray
 </h1>
-<br>
-
-
-<video width="640" height="360" controls>
-  <source src="assets/demo_fast.mp4" type="video/mp4">
-</video>
-
-
 <br>
 
 ## Abstract
