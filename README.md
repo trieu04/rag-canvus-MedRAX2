@@ -30,7 +30,8 @@ MedRAX is built on a robust technical foundation:
 - **Utilities**: Includes DICOM processing, visualization tools, and custom plotting capabilities
 
 Note the current version of MedRAX is experimentally released and does not support vision for GPT-4o and MedSAM. We will be integrating these shortly.
-<br>
+<br><br>
+
 
 ## ChestAgentBench
 We introduce ChestAgentBench, a comprehensive evaluation framework with 2,500 complex medical queries across 7 categories, built from 675 expert-curated clinical cases. The benchmark evaluates complex multi-step reasoning in CXR interpretation through:
