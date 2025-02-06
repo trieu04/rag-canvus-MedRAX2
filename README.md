@@ -56,6 +56,7 @@ cd MedRAX
 # Install package
 pip install -e .
 ```
+<br>
 
 ## Getting Started
 ```bash
