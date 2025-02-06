@@ -25,6 +25,7 @@ MedRAX is built on a robust technical foundation:
 - **X-ray Generation**: Utilizes RoentGen for synthetic CXR generation
 - **Utilities**: Includes DICOM processing, visualization tools, and custom plotting capabilities
 
+Note the current version of MedRAX is experimentally released and does not support vision for GPT-4o and MedSAM. We will be integrating these shortly.
 <br>
 
 ## ChestAgentBench
