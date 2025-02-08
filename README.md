@@ -79,9 +79,9 @@ Make sure to setup your OpenAI API key in `.env` file!
 
 
 ## Authors
-- **Adibvafa Fallahpour**¹²³ (adibvafa.fallahpour@mail.utoronto.ca)
-- **Jun Ma**²³ 
-- **Alif Munim**³⁴
+- **Adibvafa Fallahpour**¹²³ * (adibvafa.fallahpour@mail.utoronto.ca)
+- **Jun Ma**²³ * 
+- **Alif Munim**³⁴ *
 - **Hongwei Lyu**³
 - **Bo Wang**¹²³⁵
 
@@ -90,6 +90,7 @@ Make sure to setup your OpenAI API key in `.env` file!
 ³ University Health Network, Toronto, Canada  
 ⁴ Cohere For AI, Toronto, Canada  
 ⁵ Department of Laboratory Medicine and Pathobiology, University of Toronto, Toronto, Canada
+* Equal contribution
 <br><br>
 
 
