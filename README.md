@@ -89,7 +89,7 @@ Make sure to setup your OpenAI API key in `.env` file!
 ² Vector Institute, Toronto, Canada  
 ³ University Health Network, Toronto, Canada  
 ⁴ Cohere For AI, Toronto, Canada  
-⁵ Department of Laboratory Medicine and Pathobiology, University of Toronto, Toronto, Canada
+⁵ Department of Laboratory Medicine and Pathobiology, University of Toronto, Toronto, Canada <br>
 \* Equal contribution
 <br><br>
 
