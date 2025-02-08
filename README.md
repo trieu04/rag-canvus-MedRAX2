@@ -45,6 +45,26 @@ We introduce ChestAgentBench, a comprehensive evaluation framework with 2,500 co
 - Characterization
 
 Download the benchmark: [ChestAgentBench on Hugging Face](https://huggingface.co/datasets/wanglab/chest-agent-bench)
+```
+huggingface-cli download wanglab/chestagentbench --repo-type dataset --local-dir chestagentbench
+```
+
+Unzip the Eurorad figures to your local `MedMAX` directory.
+```
+unzip chestagentbench/figures.zip
+```
+
+To evaluate with GPT-4o, set your OpenAI API key and run the quickstart script.
+```
+export OPENAI_API_KEY="<your-openai-api-key>"
+python quickstart.py \
+    --model chatgpt-4o-latest \
+    --temperature 0.2 \
+    --max-cases 2 \
+    --log-prefix chatgpt-4o-latest \
+    --use-urls
+```
+
 
 <br>
 
