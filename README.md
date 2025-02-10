@@ -130,6 +130,7 @@ ChestXRayClassifierTool(device=device)
 ### Segmentation Tool
 ```python
 ChestXRaySegmentationTool(device=device)
+```
 
 ### Grounding Tool
 ```python
