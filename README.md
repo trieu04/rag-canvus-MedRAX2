@@ -95,8 +95,123 @@ sudo -E env "PATH=$PATH" python main.py
 You need to setup the `model_dir` inside `main.py` to the directory where you want to download or already have the weights of above tools from Hugging Face.
 Comment out the tools that you do not have access to.
 Make sure to setup your OpenAI API key in `.env` file!
-<br><br>
+<br><br><br>
 
+
+## Tool Selection and Initialization
+
+MedRAX supports selective tool initialization, allowing you to use only the tools you need. Tools can be specified when initializing the agent (look at `main.py`):
+
+```python
+selected_tools = [
+    "ImageVisualizerTool",
+    "ChestXRayClassifierTool",
+    "ChestXRaySegmentationTool",
+    # Add or remove tools as needed
+]
+
+agent, tools_dict = initialize_agent(
+    "medrax/docs/system_prompts.txt",
+    tools_to_use=selected_tools,
+    model_dir="/model-weights"
+)
+```
+
+<br><br>
+## Automatically Downloaded Models
+
+The following tools will automatically download their model weights when initialized:
+
+### Classification Tool
+```python
+ChestXRayClassifierTool(device=device)
+```
+
+### Segmentation Tool
+```python
+ChestXRaySegmentationTool(device=device)
+
+### Grounding Tool
+```python
+XRayPhraseGroundingTool(
+    cache_dir=model_dir, 
+    temp_dir=temp_dir, 
+    load_in_8bit=True, 
+    device=device
+)
+```
+- Maira-2 weights download to specified `cache_dir`
+- 8-bit and 4-bit quantization available for reduced memory usage
+
+### LLaVA-Med Tool
+```python
+LlavaMedTool(
+    cache_dir=model_dir, 
+    device=device, 
+    load_in_8bit=True
+)
+```
+- Automatic weight download to `cache_dir`
+- 8-bit and 4-bit quantization available for reduced memory usage
+
+### Report Generation Tool
+```python
+ChestXRayReportGeneratorTool(
+    cache_dir=model_dir, 
+    device=device
+)
+```
+
+### Visual QA Tool
+```python
+XRayVQATool(
+    cache_dir=model_dir, 
+    device=device
+)
+```
+- CheXagent weights download automatically
+
+### MedSAM Tool
+```
+Support for MedSAM segmentation will be added in a future update.
+```
+
+### Utility Tools
+No additional model weights required:
+```python
+ImageVisualizerTool()
+DicomProcessorTool(temp_dir=temp_dir)
+```
+
+<br><br>
+## Manual Setup Required
+
+### Image Generation Tool
+```python
+ChestXRayGeneratorTool(
+    model_path=f"{model_dir}/roentgen", 
+    temp_dir=temp_dir, 
+    device=device
+)
+```
+- RoentGen weights require manual setup:
+  1. Contact authors: https://github.com/StanfordMIMI/RoentGen
+  2. Place weights in `{model_dir}/roentgen`
+  3. Optional tool, can be excluded if not needed
+<br>
+
+## Configuration Notes
+
+### Required Parameters
+- `model_dir`: Base directory for model weights
+- `temp_dir`: Directory for temporary files
+- `device`: "cuda" for GPU, "cpu" for CPU-only
+
+### Memory Management
+- Consider selective tool initialization for resource constraints
+- Use 8-bit quantization where available
+- Some tools (LLaVA-Med, Grounding) are more resource-intensive
+<br><br>
 
 ## Authors
 - **Adibvafa Fallahpour**¹²³ * (adibvafa.fallahpour@mail.utoronto.ca)
