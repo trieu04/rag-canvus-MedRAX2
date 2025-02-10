@@ -203,7 +203,7 @@ ChestXRayGeneratorTool(
 ## Configuration Notes
 
 ### Required Parameters
-- `model_dir`: Base directory for model weights
+- `model_dir` or `cache_dir`: Base directory for model weights that Hugging Face uses
 - `temp_dir`: Directory for temporary files
 - `device`: "cuda" for GPU, "cpu" for CPU-only
 
