@@ -183,8 +183,8 @@ No additional model weights required:
 ImageVisualizerTool()
 DicomProcessorTool(temp_dir=temp_dir)
 ```
+<br>
 
-<br><br>
 ## Manual Setup Required
 
 ### Image Generation Tool
