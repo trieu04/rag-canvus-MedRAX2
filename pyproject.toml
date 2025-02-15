@@ -5,9 +5,9 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "medrax"
 version = "0.1.0"
-description = "A medical imaging and natural language processing project"
+description = "medical reasoning agent for chest x-ray"
 authors = [
-    {name = "Adibvafa Fallahpour", email = "adibvafa.fallahpour@vectorinstitute.ai"},
+    {name = "Adibvafa Fallahpour", email = "adibvafa.fallahpour@mail.utoronto.ca"},
 ]
 license = {file = "LICENSE"}
 requires-python = ">=3.10"
