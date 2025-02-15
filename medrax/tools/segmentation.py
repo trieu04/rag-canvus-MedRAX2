@@ -22,7 +22,7 @@ from langchain_core.tools import BaseTool
 
 
 class ChestXRaySegmentationInput(BaseModel):
-    """Input schema for the Chest X-Ray Segmentation Tool."""
+    """Input schema for the Chest X-ray Segmentation Tool."""
 
     image_path: str = Field(..., description="Path to the chest X-ray image file to be segmented")
     organs: Optional[List[str]] = Field(
@@ -30,7 +30,7 @@ class ChestXRaySegmentationInput(BaseModel):
         description="List of organs to segment. If None, all available organs will be segmented. "
         "Available organs: Left/Right Clavicle, Left/Right Scapula, Left/Right Lung, "
         "Left/Right Hilus Pulmonis, Heart, Aorta, Facies Diaphragmatica, "
-        "Mediastinum, Weasand, Spine"
+        "Mediastinum, Weasand, Spine",
     )
 
 
@@ -82,7 +82,7 @@ class ChestXRaySegmentationTool(BaseTool):
     temp_dir: Path = Path("temp")
     organ_map: Dict[str, int] = None
 
-    def __init__(self, device: Optional[str] = "cuda"):
+    def __init__(self, device: Optional[str] = "cuda", temp_dir: Optional[Path] = Path("temp")):
         """Initialize the segmentation tool with model and temporary directory."""
         super().__init__()
         self.model = xrv.baseline_models.chestx_det.PSPNet()
@@ -93,30 +93,56 @@ class ChestXRaySegmentationTool(BaseTool):
         self.transform = torchvision.transforms.Compose(
             [xrv.datasets.XRayCenterCrop(), xrv.datasets.XRayResizer(512)]
         )
-        
-        self.temp_dir = Path("temp") if Path("temp").exists() else Path(tempfile.mkdtemp())
+
+        self.temp_dir = temp_dir if isinstance(temp_dir, Path) else Path(temp_dir)
         self.temp_dir.mkdir(exist_ok=True)
-        
+
         # Map friendly names to model target indices
         self.organ_map = {
-            "Left Clavicle": 0, "Right Clavicle": 1,
-            "Left Scapula": 2, "Right Scapula": 3,
-            "Left Lung": 4, "Right Lung": 5,
-            "Left Hilus Pulmonis": 6, "Right Hilus Pulmonis": 7,
-            "Heart": 8, "Aorta": 9,
-            "Facies Diaphragmatica": 10, "Mediastinum": 11,
-            "Weasand": 12, "Spine": 13
+            "Left Clavicle": 0,
+            "Right Clavicle": 1,
+            "Left Scapula": 2,
+            "Right Scapula": 3,
+            "Left Lung": 4,
+            "Right Lung": 5,
+            "Left Hilus Pulmonis": 6,
+            "Right Hilus Pulmonis": 7,
+            "Heart": 8,
+            "Aorta": 9,
+            "Facies Diaphragmatica": 10,
+            "Mediastinum": 11,
+            "Weasand": 12,
+            "Spine": 13,
         }
+
+    def _align_mask_to_original(
+        self, mask: np.ndarray, original_shape: Tuple[int, int]
+    ) -> np.ndarray:
+        """
+        Align a mask from the transformed (cropped/resized) space back to the full original image.
+        Assumes that the transform does a center crop to a square of side = min(original height, width)
+        and then resizes to (512,512).
+        """
+        orig_h, orig_w = original_shape
+        crop_size = min(orig_h, orig_w)
+        crop_top = (orig_h - crop_size) // 2
+        crop_left = (orig_w - crop_size) // 2
+
+        # Resize mask (from 512x512) to the cropped region size
+        resized_mask = skimage.transform.resize(
+            mask, (crop_size, crop_size), order=0, preserve_range=True, anti_aliasing=False
+        )
+        full_mask = np.zeros(original_shape)
+        full_mask[crop_top : crop_top + crop_size, crop_left : crop_left + crop_size] = resized_mask
+        return full_mask
 
     def _compute_organ_metrics(
         self, mask: np.ndarray, original_img: np.ndarray, confidence: float
     ) -> Optional[OrganMetrics]:
         """Compute comprehensive metrics for a single organ mask."""
-        # Resize mask to match original image if needed
+        # Align mask to the original image coordinates if needed
         if mask.shape != original_img.shape:
-            mask = skimage.transform.resize(
-                mask, original_img.shape, order=0, preserve_range=True, anti_aliasing=False
-            )
+            mask = self._align_mask_to_original(mask, original_img.shape)
 
         props = skimage.measure.regionprops(mask.astype(int))
         if not props:
@@ -157,51 +183,43 @@ class ChestXRaySegmentationTool(BaseTool):
         self, original_img: np.ndarray, pred_masks: torch.Tensor, organ_indices: List[int]
     ) -> str:
         """Save visualization of original image with segmentation masks overlaid."""
-        # Initialize plot and base image
         plt.figure(figsize=(10, 10))
-        plt.imshow(original_img, cmap='gray', extent=[0, original_img.shape[1], original_img.shape[0], 0])
-        
+        plt.imshow(
+            original_img, cmap="gray", extent=[0, original_img.shape[1], original_img.shape[0], 0]
+        )
+
         # Generate color palette for organs
         colors = plt.cm.rainbow(np.linspace(0, 1, len(organ_indices)))
-        
+
         # Process and overlay each organ mask
         for idx, (organ_idx, color) in enumerate(zip(organ_indices, colors)):
             mask = pred_masks[0, organ_idx].cpu().numpy()
             if mask.sum() > 0:
-                # Resize mask if dimensions don't match
+                # Align the mask to the original image coordinates
                 if mask.shape != original_img.shape:
-                    mask = skimage.transform.resize(
-                        mask, 
-                        original_img.shape, 
-                        order=0, 
-                        preserve_range=True, 
-                        anti_aliasing=False
-                    )
-                
-                # Erode mask to make it 10% smaller
-                import cv2
-                kernel_size = max(1, int(min(mask.shape) * 0.04))
-                kernel = np.ones((kernel_size, kernel_size), np.uint8)
-                mask = cv2.erode(mask.astype(np.uint8), kernel, iterations=1)
-                
-                # Apply semi-transparent colored overlay
+                    mask = self._align_mask_to_original(mask, original_img.shape)
+
+                # Create a colored overlay with transparency
                 colored_mask = np.zeros((*original_img.shape, 4))
                 colored_mask[mask > 0] = (*color[:3], 0.3)
-                plt.imshow(colored_mask, extent=[0, original_img.shape[1], original_img.shape[0], 0])
-                
-                # Add legend entry for organ
-                organ_name = list(self.organ_map.keys())[list(self.organ_map.values()).index(organ_idx)]
+                plt.imshow(
+                    colored_mask, extent=[0, original_img.shape[1], original_img.shape[0], 0]
+                )
+
+                # Add legend entry for the organ
+                organ_name = list(self.organ_map.keys())[
+                    list(self.organ_map.values()).index(organ_idx)
+                ]
                 plt.plot([], [], color=color, label=organ_name, linewidth=3)
-        
-        # Finalize and save plot
+
         plt.title("Segmentation Overlay")
-        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+        plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
         plt.axis("off")
-        
+
         save_path = self.temp_dir / f"segmentation_{uuid.uuid4().hex[:8]}.png"
-        plt.savefig(save_path, bbox_inches='tight', dpi=300)
+        plt.savefig(save_path, bbox_inches="tight", dpi=300)
         plt.close()
-        
+
         return str(save_path)
 
     def _run(
@@ -214,14 +232,12 @@ class ChestXRaySegmentationTool(BaseTool):
         try:
             # Validate and get organ indices
             if organs:
-                # Normalize organ names and validate
                 organs = [o.strip() for o in organs]
                 invalid_organs = [o for o in organs if o not in self.organ_map]
                 if invalid_organs:
                     raise ValueError(f"Invalid organs specified: {invalid_organs}")
                 organ_indices = [self.organ_map[o] for o in organs]
             else:
-                # Use all organs if none specified
                 organ_indices = list(self.organ_map.values())
                 organs = list(self.organ_map.keys())
 
@@ -234,13 +250,11 @@ class ChestXRaySegmentationTool(BaseTool):
             img = img[None, ...]
             img = self.transform(img)
             img = torch.from_numpy(img)
-
             img = img.to(self.device)
 
             # Generate predictions
             with torch.no_grad():
                 pred = self.model(img)
-
             pred_probs = torch.sigmoid(pred)
             pred_masks = (pred_probs > 0.5).float()
 
