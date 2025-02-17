@@ -19,7 +19,14 @@ _ = load_dotenv()
 
 
 def initialize_agent(
-    prompt_file, tools_to_use=None, model_dir="/model-weights", temp_dir="temp", device="cuda"
+    prompt_file,
+    tools_to_use=None,
+    model_dir="/model-weights",
+    temp_dir="temp",
+    device="cuda",
+    model="chatgpt-4o-latest",
+    temperature=0.7,
+    top_p=0.95,
 ):
     """Initialize the MedRAX agent with specified tools and configuration.
 
@@ -29,6 +36,9 @@ def initialize_agent(
         model_dir (str, optional): Directory containing model weights. Defaults to "/model-weights".
         temp_dir (str, optional): Directory for temporary files. Defaults to "temp".
         device (str, optional): Device to run models on. Defaults to "cuda".
+        model (str, optional): Model to use. Defaults to "chatgpt-4o-latest".
+        temperature (float, optional): Temperature for the model. Defaults to 0.7.
+        top_p (float, optional): Top P for the model. Defaults to 0.95.
 
     Returns:
         Tuple[Agent, Dict[str, BaseTool]]: Initialized agent and dictionary of tool instances
@@ -62,7 +72,7 @@ def initialize_agent(
             tools_dict[tool_name] = all_tools[tool_name]()
 
     checkpointer = MemorySaver()
-    model = ChatOpenAI(model="gpt-4o", temperature=0.7, top_p=0.95)
+    model = ChatOpenAI(model=model, temperature=temperature, top_p=top_p)
     agent = Agent(
         model,
         tools=list(tools_dict.values()),
@@ -98,7 +108,14 @@ if __name__ == "__main__":
     ]
 
     agent, tools_dict = initialize_agent(
-        "medrax/docs/system_prompts.txt", tools_to_use=selected_tools, model_dir="/model-weights"
+        "medrax/docs/system_prompts.txt",
+        tools_to_use=selected_tools,
+        model_dir="/model-weights",  # Change this to the path of the model weights
+        temp_dir="temp",  # Change this to the path of the temporary directory
+        device="cuda",  # Change this to the device you want to use
+        model="gpt-4o",  # Change this to the model you want to use, e.g. gpt-4o-mini
+        temperature=0.7,
+        top_p=0.95,
     )
     demo = create_demo(agent, tools_dict)
 
