@@ -1,4 +1,5 @@
 import re
+import base64
 import gradio as gr
 from pathlib import Path
 import time
@@ -106,10 +107,29 @@ class ChatInterface:
 
         messages = []
         image_path = self.original_file_path or display_image
+
         if image_path is not None:
-            messages.append({"role": "user", "content": f"path: {image_path}"})
+            # Send path for tools
+            messages.append({"role": "user", "content": f"image_path: {image_path}"})
+
+            # Load and encode image for multimodal
+            with open(image_path, "rb") as img_file:
+                img_base64 = base64.b64encode(img_file.read()).decode("utf-8")
+
+            messages.append(
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:image/jpeg;base64,{img_base64}"},
+                        }
+                    ],
+                }
+            )
+
         if message is not None:
-            messages.append({"role": "user", "content": message})
+            messages.append({"role": "user", "content": [{"type": "text", "text": message}]})
 
         try:
             for event in self.agent.workflow.stream(
