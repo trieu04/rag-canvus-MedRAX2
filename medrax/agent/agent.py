@@ -81,7 +81,6 @@ class Agent:
             log_dir (str, optional): Directory to save logs. Defaults to 'logs'.
         """
         self.system_prompt = system_prompt
-        print(f"System prompt: {self.system_prompt}")
         self.log_tools = log_tools
 
         if self.log_tools:
