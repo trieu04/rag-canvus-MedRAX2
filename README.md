@@ -212,7 +212,17 @@ ChestXRayGeneratorTool(
 - Consider selective tool initialization for resource constraints
 - Use 8-bit quantization where available
 - Some tools (LLaVA-Med, Grounding) are more resource-intensive
-<br><br>
+<br>
+
+
+## Star History
+<div align="center">
+  
+[![Star History Chart](https://api.star-history.com/svg?repos=bowang-lab/MedRAX&type=Date)](https://star-history.com/#bowang-lab/MedRAX&Date)
+
+</div>
+<br>
+
 
 ## Authors
 - **Adibvafa Fallahpour**¹²³ * (adibvafa.fallahpour@mail.utoronto.ca)
