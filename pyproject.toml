@@ -48,7 +48,6 @@ dependencies = [
     "torch>=2.2.0",
     "torchvision>=0.10.0",
     "scikit-image>=0.18.0",
-    "pygraphviz>=1.8",
     "gradio>=5.0.0",
     "opencv-python>=4.8.0",
     "matplotlib>=3.8.0",
