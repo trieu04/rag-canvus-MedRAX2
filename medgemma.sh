@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=medgemma3
+#SBATCH --job-name=medgemma2
 #SBATCH -c 4
 #SBATCH --gres=gpu:l40s:1
 #SBATCH --time=16:00:00
