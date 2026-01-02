@@ -129,6 +129,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.medgemma/
 
 # Spyder project settings
 .spyderproject
@@ -170,6 +171,7 @@ afallah/
 logs/
 
 temp/
+.tmp/
 
 .gradio/
 
@@ -182,3 +184,6 @@ model-weights/
 benchmarking/data/
 model_cache/
 medgemma/
+ReXVQA_medgemma_cases/
+benchmark_results/
+.vscode/
