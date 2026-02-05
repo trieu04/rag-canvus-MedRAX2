@@ -5,7 +5,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --time=72:00:00
 #SBATCH --mem=100G
-#SBATCH --reservation=mkoziarski_gpu
+
 #SBATCH --output=.cache/csv_bench/%j.out
 #SBATCH --error=.cache/csv_bench/%j.err
 

@@ -70,6 +70,7 @@ def build_overrides(row: Dict[str, str]) -> List[str]:
     system_prompt = _clean_field(row, "system-prompt")
     max_questions = _clean_field(row, "max_questions")
     subset = _clean_field(row, "subset")
+    temperature = _clean_field(row, "temperature")
     
     overrides.append(f"benchmark={benchmark}")
     overrides.append(f"provider={provider}")
@@ -83,6 +84,10 @@ def build_overrides(row: Dict[str, str]) -> List[str]:
     # Allow per-row override of benchmark max questions
     if max_questions:
         overrides.append(f"benchmark.max_questions={max_questions}")
+
+    # Allow per-row override of provider temperature
+    if temperature:
+        overrides.append(f"provider.temperature={temperature}")
 
     if provider == "medrax":
         tools_list = parse_tools_field(row.get("tools", ""))

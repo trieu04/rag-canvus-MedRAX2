@@ -25,6 +25,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+*.gz
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -174,6 +175,7 @@ temp/
 .tmp/
 
 .gradio/
+.vscode/
 
 hf_files/
 medrax-pdfs/
@@ -181,9 +183,9 @@ model-weights/
 
 .DS_Store
 
+# benchmarking
 benchmarking/data/
 model_cache/
 medgemma/
-ReXVQA_medgemma_cases/
+medgemma_images/
 benchmark_results/
-.vscode/

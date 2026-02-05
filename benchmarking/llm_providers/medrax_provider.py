@@ -183,7 +183,7 @@ class MedRAXProvider(LLMProvider):
                         continue
 
                     for msg in node_output["messages"]:
-                        if isinstance(msg, AIMessage) and msg.content:
+                        if isinstance(msg, AIMessage):
                             llm_requests += 1
 
                             usage_meta = getattr(msg, "usage_metadata", {}) or {}
@@ -197,20 +197,37 @@ class MedRAXProvider(LLMProvider):
                             token_usage["output"] += output_tokens or 0
                             token_usage["reasoning"] += usage_meta.get("reasoning_tokens", 0) or 0
 
+                            # Capture tool calls from both LangChain tool_calls and Gemini function_call(s)
+                            collected_calls = []
                             tool_calls_in_msg = getattr(msg, "tool_calls", None)
                             if tool_calls_in_msg:
-                                for call in tool_calls_in_msg:
+                                collected_calls.extend(tool_calls_in_msg)
+
+                            additional_kwargs = getattr(msg, "additional_kwargs", {}) or {}
+                            function_call = additional_kwargs.get("function_call")
+                            if function_call:
+                                collected_calls.append(function_call)
+                            function_calls = additional_kwargs.get("function_calls")
+                            if function_calls:
+                                if isinstance(function_calls, list):
+                                    collected_calls.extend(function_calls)
+                                else:
+                                    collected_calls.append(function_calls)
+
+                            if collected_calls:
+                                for call in collected_calls:
                                     tool_name = (
                                         call.get("name") if isinstance(call, dict) else str(call)
                                     )
                                     tool_calls.append({"node": node_name, "tool": tool_name})
 
                             # Handle case where content is a list
-                            content = msg.content
+                            content = msg.content or ""
                             if isinstance(content, list):
                                 content = " ".join(content)
                             # Clean up the content (remove temp paths, etc.)
-                            final_response = re.sub(r"temp/[^\s]*", "", content).strip()
+                            if content.strip():
+                                final_response = re.sub(r"temp/[^\s]*", "", content).strip()
 
             # Determine the final response
             if final_response:
