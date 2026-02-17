@@ -3,8 +3,8 @@
 #SBATCH --job-name=csv_bench
 #SBATCH -c 4
 #SBATCH --gres=gpu:1
-#SBATCH --time=72:00:00
-#SBATCH --mem=100G
+#SBATCH --time=24:00:00
+#SBATCH --mem=128G
 
 #SBATCH --output=.cache/csv_bench/%j.out
 #SBATCH --error=.cache/csv_bench/%j.err
@@ -17,8 +17,8 @@ echo "-----------------------------"
 
 source ~/.bashrc
 
-conda activate medrax_python
-source .venv/medrax/bin/activate
+conda activate medrax
+# source .venv/medrax/bin/activate
 
 filename=${1:-"medrax_evals_vqa.csv"}
 basedir="benchmarking/eval_sets"

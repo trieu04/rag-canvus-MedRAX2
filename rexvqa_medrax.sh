@@ -13,3 +13,7 @@ module load arrow clang/18.1.8 scipy-stack
 source venv/bin/activate
 
 /scratch/lijunzh3/MedRAX2/venv/bin/python -m benchmarking.cli run --benchmark rexvqa --provider medrax --model gemini-3-pro-preview --system-prompt CHESTAGENTBENCH_PROMPT --data-dir benchmarking/data/rexvqa --output-dir temp --max-questions 250 --temperature 0.7 --top-p 0.95 --max-tokens 10000 --concurrency 4 --random-seed 42
+
+
+https://drive.google.com/file/d/1nQk9mFL4R2SZAQX3C3cNwEFOVHRZVsuw/view?usp=sharing
+https://drive.google.com/file/d/1vIezD1vVtYHmLP6mvsPjAJ5vqDs9iYdS/view?usp=sharing
