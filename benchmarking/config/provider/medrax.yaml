@@ -8,6 +8,7 @@ max_tokens: 10000
 prompt_file: medrax/docs/MedRAX2_system_prompt_v0.txt
 model_dir: /home/andrew.lian/wanglab/MedRAX2/model-weights
 temp_dir: temp
+load_in_8bit: true
 
 # MedRAX-specific: tool selection
 # Comment out tools you don't want to use
