@@ -26,7 +26,8 @@ class BenchmarkResult:
     duration: float
     usage: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
-    chunk_history: Optional[Dict[str, Any]] = None
+    chunk_history: Optional[Any] = None
+    tool_execution_trace: Optional[List[Dict[str, Any]]] = None
     metadata: Optional[Dict[str, Any]] = None
 
 
@@ -228,6 +229,7 @@ class BenchmarkRunner:
                 duration=duration,
                 usage=response.usage,
                 chunk_history=response.chunk_history,
+                tool_execution_trace=response.tool_execution_trace,
                 metadata={
                     "data_point_metadata": data_point.metadata,
                     "raw_response": response.content,
@@ -249,6 +251,7 @@ class BenchmarkRunner:
                 duration=duration,
                 error=str(e),
                 chunk_history=None,
+                tool_execution_trace=None,
                 metadata={"data_point_metadata": data_point.metadata},
             )
 
@@ -351,6 +354,7 @@ class BenchmarkRunner:
             "usage": result.usage,
             "error": result.error,
             "chunk_history": result.chunk_history,
+            "tool_execution_trace": result.tool_execution_trace,
             "metadata": result.metadata,
         }
         
@@ -387,6 +391,7 @@ class BenchmarkRunner:
                     "duration": result.duration,
                     "usage": result.usage,
                     "error": result.error,
+                    "tool_execution_trace": result.tool_execution_trace,
                     "metadata": result.metadata,
                 }
             )
