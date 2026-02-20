@@ -3,6 +3,8 @@ import csv
 import json
 import subprocess
 import sys
+import uuid
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
@@ -180,6 +182,26 @@ def build_overrides(row: Dict[str, str]) -> List[str]:
     return overrides
 
 
+def _get_override_value(overrides: List[str], key: str) -> Optional[str]:
+    """Return the value for an override key from 'key=value' style overrides."""
+    prefix = f"{key}="
+    for item in overrides:
+        if item.startswith(prefix):
+            return item[len(prefix):]
+    return None
+
+
+def _build_unique_run_id(overrides: List[str]) -> str:
+    """Build a unique run_id so parallel workers never share output/log paths."""
+    benchmark = _get_override_value(overrides, "benchmark") or "benchmark"
+    provider = _get_override_value(overrides, "provider") or "provider"
+    model = _get_override_value(overrides, "provider.model") or "model"
+    max_questions = _get_override_value(overrides, "benchmark.max_questions") or "None"
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+    unique = uuid.uuid4().hex[:8]
+    return f"{benchmark}_{provider}_{model}_{max_questions}_{timestamp}_{unique}"
+
+
 def read_accuracy_from_run(run_dir: Path) -> Optional[float]:
     final_dir = run_dir / "final_results"
     if not final_dir.exists():
@@ -202,9 +224,9 @@ def run_benchmark(
     output_dir: Path,
     timeout: Optional[int] = None,
 ) -> Dict[str, Optional[object]]:
-    before_dirs = list_run_dirs(output_dir)
-
-    cmd = ["python", "-m", "benchmarking.cli"] + overrides
+    run_id = _build_unique_run_id(overrides)
+    run_dir = output_dir / run_id
+    cmd = ["python", "-m", "benchmarking.cli"] + overrides + [f"hydra.run.dir={run_dir}"]
     try:
         result = subprocess.run(
             cmd,
@@ -219,7 +241,7 @@ def run_benchmark(
                 "stdout": e.stdout,
                 "stderr": f"TimeoutExpired: {e}",
                 "returncode": -1,
-                "run_id": None,
+                "run_id": run_id,
             }
 
     if result.returncode != 0:
@@ -228,13 +250,15 @@ def run_benchmark(
             "stdout": result.stdout,
             "stderr": result.stderr,
             "returncode": result.returncode,
-            "run_id": None,
+            "run_id": run_id,
         }
 
-    after_dirs = list_run_dirs(output_dir)
-    run_dir = pick_run_dir(before_dirs, after_dirs)
-    run_id = run_dir.name if run_dir is not None else None
-    if run_dir is None:
+    if not run_dir.exists():
+        # Fallback if an alternate hydra.run.dir is injected elsewhere.
+        discovered_dirs = list_run_dirs(output_dir)
+        run_dir = sorted(discovered_dirs, key=lambda p: p.stat().st_mtime)[-1] if discovered_dirs else None
+        run_id = run_dir.name if run_dir is not None else run_id
+    if run_dir is None or not run_dir.exists():
         return {
             "accuracy": None,
             "stdout": result.stdout,
