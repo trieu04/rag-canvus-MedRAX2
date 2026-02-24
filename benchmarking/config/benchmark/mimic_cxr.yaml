@@ -1,7 +1,7 @@
 # MIMIC-CXR benchmark configuration
 name: mimic_cxr
 data_dir: /home/andrew.lian/wanglab/mimic/physionet.org/files/mimic-cxr-jpg/2.0.0
-manifest_path: /home/andrew.lian/wanglab/MedRAX2/benchmarking/data/mimic_cxr/manifests/mimic_cxr_lt_2024_test2_multilabel.jsonl
+manifest_path: /benchmarking/data/mimic_cxr/manifests/mimic_cxr_lt_2024_test2_multilabel.jsonl
 source_csv: null
 image_root: null
 label_mode: null

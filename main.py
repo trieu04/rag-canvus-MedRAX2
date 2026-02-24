@@ -123,7 +123,6 @@ def initialize_agent(
     model_kwargs: Dict[str, Any] = {},
     system_prompt: str = "MEDICAL_ASSISTANT",
     medgemma_api_url: Optional[str] = None,
-    load_in_8bit: bool = True,
 ):
     """Initialize the MedRAX agent with specified tools and configuration.
 
@@ -151,13 +150,13 @@ def initialize_agent(
         "TorchXRayVisionClassifierTool": lambda: TorchXRayVisionClassifierTool(device=device),
         "ArcPlusClassifierTool": lambda: ArcPlusClassifierTool(cache_dir=model_dir, device=device),
         "ChestXRaySegmentationTool": lambda: ChestXRaySegmentationTool(device=device),
-        "LlavaMedTool": lambda: LlavaMedTool(cache_dir=model_dir, device=device, load_in_8bit=load_in_8bit),
+        "LlavaMedTool": lambda: LlavaMedTool(cache_dir=model_dir, device=device, load_in_8bit=True),
         "CheXagentXRayVQATool": lambda: CheXagentXRayVQATool(
-            cache_dir=model_dir, device=device, load_in_8bit=load_in_8bit
+            cache_dir=model_dir, device=device, load_in_8bit=True
         ),
         "ChestXRayReportGeneratorTool": lambda: ChestXRayReportGeneratorTool(cache_dir=model_dir, device=device),
         "XRayPhraseGroundingTool": lambda: XRayPhraseGroundingTool(
-            cache_dir=model_dir, temp_dir=temp_dir, load_in_8bit=load_in_8bit, device=device
+            cache_dir=model_dir, temp_dir=temp_dir, load_in_8bit=True, device=device
         ),
         "ChestXRayGeneratorTool": lambda: ChestXRayGeneratorTool(
             model_path=f"{model_dir}/roentgen", temp_dir=temp_dir, device=device
