@@ -204,15 +204,3 @@ class CheXagentXRayVQATool(BaseTool):
     ) -> Tuple[Dict[str, Any], Dict]:
         """Async version of _run."""
         return self._run(image_paths, prompt, max_new_tokens)
-
-
-if __name__ == "__main__":
-    # Example usage
-    tool = CheXagentXRayVQATool(cache_dir="model-weights")
-    output, metadata = tool._run(
-        image_paths=["/home/andrew.lian/wanglab/mimic/physionet.org/files/mimic-cxr-jpg/2.0.0/files/p10/p10000032/s50414267/02aa804e-bde0afdd-112c0b34-7bc16630-4e384014.jpg"],
-        prompt="What abnormalities are present in these chest X-rays?",
-        max_new_tokens=512,
-    )
-    print("Output:", output)
-    print("Metadata:", metadata)
