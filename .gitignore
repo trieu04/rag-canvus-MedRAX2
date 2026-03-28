@@ -11,8 +11,7 @@ __pycache__/
 build/
 develop-eggs/
 dist/
-downloads/
-eggs/
+downloads/eggs/
 .eggs/
 lib/
 lib64/
@@ -25,6 +24,11 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+*.gz
+
+# Allow frontend library code
+!web_platform/frontend/lib/
+!web_platform/frontend/lib/**
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -129,6 +133,18 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.medgemma/
+
+# MedRAX web platform local data
+web_platform/backend/medrax.db
+web_platform/backend/medrax.db-wal
+web_platform/backend/medrax.db-shm
+# User uploads + legacy path before medrax_data/ migration
+web_platform/backend/uploads/
+web_platform/backend/medrax_data/
+web_platform/backend/model_cache/
+web_platform/backend/hf_cache/
+web_platform/backend/torch_cache/
 
 # Spyder project settings
 .spyderproject
@@ -170,8 +186,10 @@ afallah/
 logs/
 
 temp/
+.tmp/
 
 .gradio/
+.vscode/
 
 hf_files/
 medrax-pdfs/
@@ -179,6 +197,19 @@ model-weights/
 
 .DS_Store
 
+# benchmarking
 benchmarking/data/
 model_cache/
 medgemma/
+medgemma_images/
+benchmark_results/
+benchmarking/eval_sets/
+
+# env
+*_env.txt
+
+# Local deployment files
+medrax-backend.service
+docker-compose.yml
+web_platform/backend/Dockerfile
+web_platform/frontend/Dockerfile

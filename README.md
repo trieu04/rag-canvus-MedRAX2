@@ -136,6 +136,8 @@ GOOGLE_SEARCH_ENGINE_ID=
 # MedGemma VQA Tool (Optional)
 # URL for the MedGemma FastAPI service
 MEDGEMMA_API_URL=
+MEDGEMMA_MODEL_NAME=
+MEDGEMMA_MAX_CONCURRENCY=
 ```
 
 ### Getting Started
@@ -314,7 +316,7 @@ The ArcPlus classifier requires manual setup as the pre-trained model is not pub
 4. **Initialize Tool**: The tool will automatically look for the model file in the specified `cache_dir`
 
 The ArcPlus model provides advanced chest X-ray classification across 6 medical datasets (MIMIC, CheXpert, NIH, RSNA, VinDr, Shenzhen) with 52+ pathology categories.
-```
+
 
 ### Knowledge Base Setup (MedicalRAGTool)
 
