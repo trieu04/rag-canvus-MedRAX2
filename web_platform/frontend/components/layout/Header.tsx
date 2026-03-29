@@ -11,6 +11,7 @@
 
 import { useState, Fragment } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Menu, Transition } from "@headlessui/react";
 import { Settings, LogOut, User, ChevronDown } from "lucide-react";
 import { useAuthStore } from "../../lib/store/authStore";
@@ -44,8 +45,8 @@ export function Header() {
       {/* Left: Logo/Title */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
-          <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-md shadow-blue-500/20">
-            <span className="text-white text-xs font-bold">M</span>
+          <div className="h-8 w-8 rounded-xl bg-white flex items-center justify-center shadow-md shadow-blue-500/20 overflow-hidden p-0.5 shrink-0">
+            <Image src="/medrax_logo.png" alt="MedRAX" width={28} height={28} className="object-contain" />
           </div>
           <span className="text-lg font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent tracking-tight">
             MedRAX

@@ -17,6 +17,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "MedRAX - Medical Imaging AI Platform",
   description: "AI-powered medical imaging analysis platform",
+  icons: {
+    icon: "/medrax_logo.png",
+    apple: "/medrax_logo.png",
+  },
 };
 
 export default function RootLayout({
