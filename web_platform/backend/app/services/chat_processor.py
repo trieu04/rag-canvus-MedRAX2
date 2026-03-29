@@ -342,6 +342,28 @@ class ChatProcessor:
                 except (ValueError, SyntaxError, TypeError):
                     result_data = {"raw": str(tool_message.content)}
             
+            # Normalize any image/file paths in result_data to display URLs before storing,
+            # so the frontend receives /medrax/... paths instead of raw filesystem paths.
+            if isinstance(result_data, dict):
+                normalized: dict = {}
+                for key, value in result_data.items():
+                    k = key.lower()
+                    # Match any key that mentions a path or visualization
+                    is_path_key = "path" in k or "visualization" in k
+                    if is_path_key:
+                        if isinstance(value, str) and value:
+                            normalized[key] = self._to_display_path(value)
+                        elif isinstance(value, list):
+                            normalized[key] = [
+                                self._to_display_path(v) if isinstance(v, str) and v else v
+                                for v in value
+                            ]
+                        else:
+                            normalized[key] = value
+                    else:
+                        normalized[key] = value
+                result_data = normalized
+
             # Create result record
             if result_data is not None:
                 exec_result = ToolExecutionResult(
@@ -351,7 +373,7 @@ class ChatProcessor:
                 )
                 self.db.add(exec_result)
                 
-                # Extract generated image paths from tool result
+                # Extract generated image paths from tool result (already display paths after normalization above)
                 # Tools may return: image_path, segmentation_image_path, visualization_path, etc.
                 generated_images = []
                 for key, value in (result_data.items() if isinstance(result_data, dict) else []):
@@ -359,10 +381,9 @@ class ChatProcessor:
                         if isinstance(value, str) and value:
                             generated_images.append(value)
                 
-                # Update execution with generated images (convert to display paths)
+                # Update execution with generated images (already display paths, no conversion needed)
                 if generated_images:
-                    generated_display_paths = [self._to_display_path(path) for path in generated_images]
-                    execution.image_paths = display_paths + generated_display_paths
+                    execution.image_paths = display_paths + generated_images
             
             # Update execution status
             execution.status = "completed"

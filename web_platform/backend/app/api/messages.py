@@ -20,6 +20,7 @@ from ..schemas.tool import ToolExecutionResponse
 from ..dependencies import get_current_doctor
 from ..utils.sse import create_sse_event
 from ..utils.logging_config import logger
+from ..utils.file_utils import to_display_path
 from ..services.tool_manager import tool_manager
 from ..services.chat_processor import ChatProcessor
 # from ..services.image_registry import image_registry  # TODO: Re-enable when wrapper is fixed
@@ -54,7 +55,7 @@ def enrich_tool_execution(execution: ToolExecution) -> dict:
         "started_at": execution.started_at,
         "completed_at": execution.completed_at,
         "execution_time_ms": execution_time_ms,
-        "image_paths": execution.image_paths,
+        "image_paths": [to_display_path(p) for p in (execution.image_paths or []) if p],
     }
 
 

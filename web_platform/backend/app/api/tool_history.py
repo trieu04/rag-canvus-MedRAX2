@@ -17,6 +17,7 @@ from ..models.message import Message
 from ..models.tool_execution import ToolExecution, ToolExecutionLog, ToolExecutionResult
 from ..schemas.tool import ToolExecutionResponse, ToolHistoryQuery
 from ..utils.logging_config import logger
+from ..utils.file_utils import to_display_path
 
 
 router = APIRouter()
@@ -52,7 +53,7 @@ def enrich_tool_execution(execution: ToolExecution) -> dict:
         "started_at": execution.started_at,
         "completed_at": execution.completed_at,
         "execution_time_ms": execution_time_ms,
-        "image_paths": execution.image_paths,
+        "image_paths": [to_display_path(p) for p in (execution.image_paths or []) if p],
     }
 
 

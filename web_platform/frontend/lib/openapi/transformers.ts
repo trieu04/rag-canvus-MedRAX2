@@ -93,7 +93,6 @@ export function toUiScan(scan: ApiScanResponse): Scan {
   return {
     id: scan.id,
     chatId: scan.chatId,
-    filePath: scan.filePath,
     displayPath: scan.displayPath,
     fileType: scan.fileType as "jpg" | "jpeg" | "png" | "gif" | "dcm" | "dicom",
     fileSize: scan.fileSize,

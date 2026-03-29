@@ -149,6 +149,38 @@ async def save_upload_file(file: UploadFile, subdirectory: str = "") -> tuple[st
     return str(file_path), display_path
 
 
+def to_display_path(path: str) -> str:
+    """
+    Convert a filesystem path to a /medrax/... display URL.
+
+    Safe to call on paths that are already display URLs — they are returned unchanged.
+    """
+    if not path:
+        return path
+    p = path.strip()
+    if p.startswith("/medrax/"):
+        return p
+    if p.startswith("/uploads/"):
+        return f"/medrax/uploads/{p[len('/uploads/'):]}"
+    if p.startswith("/temp/"):
+        return f"/medrax/generated/{p[len('/temp/'):]}"
+    if p.startswith("uploads/"):
+        return f"/medrax/{p}"
+    if p.startswith("temp/"):
+        return f"/medrax/generated/{p[len('temp/'):]}"
+    upload_root = resolve_upload_dir()
+    gen_root = resolve_generated_dir()
+    try:
+        abs_p = Path(p).expanduser().resolve()
+        if abs_p.is_relative_to(upload_root):
+            return f"/medrax/uploads/{abs_p.relative_to(upload_root).as_posix()}"
+        if abs_p.is_relative_to(gen_root):
+            return f"/medrax/generated/{abs_p.relative_to(gen_root).as_posix()}"
+    except (ValueError, OSError):
+        pass
+    return path
+
+
 def is_generated_tool_image_path(path: str) -> bool:
     """True if path points to tool-generated imagery (safe to delete on chat/patient removal)."""
     p = path.lower()

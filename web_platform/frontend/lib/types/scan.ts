@@ -11,7 +11,6 @@ export type ScanFileType = "jpg" | "jpeg" | "png" | "gif" | "dcm" | "dicom";
 export interface Scan {
   id: string;
   chatId: string;
-  filePath: string;
   displayPath: string; // Path for display (DICOM converted to image)
   fileType: ScanFileType;
   fileSize: number; // Size in bytes
