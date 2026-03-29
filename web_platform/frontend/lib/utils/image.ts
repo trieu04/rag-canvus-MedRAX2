@@ -31,5 +31,12 @@ export function getImageUrl(displayPath: string | null | undefined): string | nu
     normalizedPath = `/medrax/generated/${normalizedPath.slice("/temp/".length)}`;
   }
 
+  // Detect raw OS filesystem paths leaking from older stored rows (e.g. /home/..., /var/...).
+  // These can never be served as static assets, so return null to show a graceful error
+  // instead of issuing an unauthenticated request that gets 403.
+  if (/^\/(home|var|tmp|Users|root|opt|srv)\//.test(normalizedPath)) {
+    return null;
+  }
+
   return `${API_CONFIG.baseURL}${normalizedPath}`;
 }

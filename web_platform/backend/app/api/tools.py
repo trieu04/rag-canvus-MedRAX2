@@ -25,6 +25,7 @@ from ..dependencies import get_current_doctor
 from ..services.tool_manager import tool_manager
 from ..utils.logging_config import logger
 from ..utils.tool_registry import get_tool_registry
+from ..utils.file_utils import to_display_path
 
 router = APIRouter()
 
@@ -58,7 +59,7 @@ def enrich_tool_execution(execution: ToolExecution) -> dict:
         "started_at": execution.started_at,
         "completed_at": execution.completed_at,
         "execution_time_ms": execution_time_ms,
-        "image_paths": execution.image_paths,
+        "image_paths": [to_display_path(p) for p in (execution.image_paths or []) if p],
     }
 
 

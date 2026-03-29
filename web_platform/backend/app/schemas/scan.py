@@ -22,7 +22,6 @@ class ScanResponse(ScanBase):
 
     id: str
     chat_id: str = Field(..., alias="chatId")
-    file_path: str = Field(..., alias="filePath")
     display_path: str = Field(..., alias="displayPath")
     uploaded_at: datetime = Field(..., alias="uploadedAt")
 

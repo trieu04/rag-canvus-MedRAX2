@@ -1495,8 +1495,6 @@ export interface components {
             id: string;
             /** Chatid */
             chatId: string;
-            /** Filepath */
-            filePath: string;
             /** Displaypath */
             displayPath: string;
             /**

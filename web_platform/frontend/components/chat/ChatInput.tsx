@@ -125,7 +125,7 @@ export function ChatInput({
     console.log(`✅ Scans uploaded successfully:`, scans.map((s) => s.id));
     console.log(
       `📎 Scans ready to attach:`,
-      scans.map((s) => ({ id: s.id, path: s.filePath }))
+      scans.map((s) => ({ id: s.id, path: s.displayPath }))
     );
   };
 

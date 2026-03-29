@@ -362,19 +362,13 @@ export function ToolOutputsSidebar({ messageId, isOpen, onClose }: ToolOutputsSi
                                             const errorDiv = document.createElement("div");
                                             errorDiv.className =
                                               "bg-red-900/20 border border-red-800 rounded p-2 text-red-400 text-xs";
-                                            errorDiv.innerHTML = `
-                                                                                    <div>⚠️ Failed to load image</div>
-                                                                                    <div class="text-[10px] mt-1">
-                                                                                        <div>Path: ${path}</div>
-                                                                                        <div>URL: ${imageUrl}</div>
-                                                                                    </div>
-                                                                                `;
+                                            errorDiv.innerHTML = `<div>⚠️ Failed to load image</div>`;
                                             img.parentElement?.insertBefore(errorDiv, img);
                                           }}
                                         />
                                       )}
                                       <p className="text-zinc-600 font-mono text-[10px] mt-1 truncate">
-                                        {path}
+                                        {path.split("/").pop()}
                                       </p>
                                     </div>
                                   );
