@@ -18,7 +18,8 @@ export const metadata: Metadata = {
   title: "MedRAX - Medical Imaging AI Platform",
   description: "AI-powered medical imaging analysis platform",
   icons: {
-    icon: "/medrax_logo.png",
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
     apple: "/medrax_logo.png",
   },
 };
