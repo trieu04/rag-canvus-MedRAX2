@@ -117,31 +117,31 @@ export function Sidebar() {
   });
 
   return (
-    <aside className="w-80 bg-zinc-900 border-r border-zinc-800 flex flex-col">
+    <aside className="w-72 bg-zinc-900/60 border-r border-zinc-800/60 flex flex-col">
       {/* Header with Search and New Patient Button */}
-      <div className="p-4 space-y-3 border-b border-zinc-800">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold text-white">Patients</h2>
+      <div className="p-3.5 space-y-2.5 border-b border-zinc-800/60">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-widest pl-0.5">Patients</h2>
           <Button
             size="sm"
             variant="primary"
             onClick={() => setIsNewPatientModalOpen(true)}
-            className="flex items-center space-x-1.5 px-3 py-1.5"
+            className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg"
           >
-            <Plus className="h-4 w-4" />
-            <span className="text-sm font-medium">New Patient</span>
+            <Plus className="h-3.5 w-3.5" />
+            <span>New Patient</span>
           </Button>
         </div>
 
         {/* Search Bar */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-zinc-500" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search patients..."
-            className="w-full pl-9 pr-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-8 pr-3 py-2 bg-zinc-800/60 border border-zinc-700/50 rounded-lg text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-500/60 focus:border-blue-500/40 transition-all duration-150"
           />
         </div>
       </div>
@@ -169,8 +169,8 @@ export function Sidebar() {
             />
           ))
         ) : (
-          <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-            <p className="text-zinc-500 text-sm mb-3">
+          <div className="flex flex-col items-center justify-center py-12 px-5 text-center">
+            <p className="text-zinc-500 text-xs mb-3">
               {searchQuery ? "No patients found" : "No patients yet"}
             </p>
             {!searchQuery && (

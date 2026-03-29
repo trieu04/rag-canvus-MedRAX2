@@ -9,6 +9,7 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { loginDoctor } from "../../lib/api/auth";
@@ -59,8 +60,11 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* Logo/Title */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">MedRAX Platform</h1>
-          <p className="text-zinc-400">Medical Reasoning Agent</p>
+          <div className="mx-auto mb-4 w-20 h-20 rounded-2xl bg-white flex items-center justify-center shadow-xl shadow-blue-500/20 p-2">
+            <Image src="/medrax_logo.png" alt="MedRAX" width={64} height={64} className="object-contain" />
+          </div>
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-1">MedRAX</h1>
+          <p className="text-sm text-zinc-500">Medical Reasoning Agent</p>
         </div>
 
         {/* Login Card */}

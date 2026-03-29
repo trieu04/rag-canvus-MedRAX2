@@ -11,7 +11,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Wrench, Loader2, Info, Download, Check, X, AlertCircle } from "lucide-react";
+import { Wrench, Loader2, Info, Download, Check, X, AlertCircle, RefreshCw } from "lucide-react";
 import { getTools, loadTool, unloadTool, bulkLoadTools, Tool } from "../../lib/api/toolManagement";
 import { ToolLoadingProgress } from "../tools/ToolLoadingProgress";
 import { Card } from "../ui/Card";
@@ -29,6 +29,23 @@ interface ToolLoadingState {
   progress: number;
   message: string;
 }
+
+/**
+ * Edit this list to change which tools are loaded by "Load Suggested".
+ * Tools are loaded one-at-a-time in order (sequential, easy on GPU).
+ * Use the tool_name IDs from the backend tool registry.
+ */
+const SUGGESTED_TOOL_IDS: string[] = [
+  "torchxrayvision_classifier",
+  "arcplus_classifier",
+  "chexagent_xray_vqa",
+  "chest_xray_segmentation",
+  "chest_xray_report_generator",
+  "xray_phrase_grounding",
+  "dicom_processor",
+  "medical_knowledge_rag",
+  "web_browser",
+];
 
 const CATEGORY_DISPLAY_NAMES: { [key: string]: string } = {
   classification: "Classification",
@@ -63,6 +80,22 @@ export function ToolsSettings() {
   // Track loading tools with SSE connections
   const [loadingTools, setLoadingTools] = useState<Map<string, ToolLoadingState>>(new Map());
   const sseConnectionsRef = useRef<Map<string, EventSource>>(new Map());
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefreshStatus = async () => {
+    setIsRefreshing(true);
+    await loadTools();
+    setIsRefreshing(false);
+  };
+
+  // Sequential "Load Suggested" state
+  const [suggestedLoading, setSuggestedLoading] = useState<{
+    currentId: string | null;
+    completedCount: number;
+    totalCount: number;
+  } | null>(null);
+  const suggestedAbortRef = useRef(false);
 
   const loadTools = useCallback(async () => {
     setIsLoading(true);
@@ -280,6 +313,83 @@ export function ToolsSettings() {
     }
   };
 
+  // Promise-based single-tool load: resolves when SSE signals "loaded", rejects on error
+  const loadToolAndAwait = useCallback((toolId: string): Promise<void> => {
+    return new Promise(async (resolve, reject) => {
+      setTools((prev) => prev.map((t) => (t.id === toolId ? { ...t, status: "loading" as const } : t)));
+      setLoadingTools((prev) => new Map(prev).set(toolId, { progress: 0, message: "Initiating load..." }));
+
+      try {
+        await loadTool(toolId);
+      } catch (err) {
+        setLoadingTools((prev) => { const n = new Map(prev); n.delete(toolId); return n; });
+        reject(err);
+        return;
+      }
+
+      const token = localStorage.getItem(AUTH_CONFIG.tokenKey);
+      if (!token) { reject(new Error("No auth token")); return; }
+
+      const url = `${API_CONFIG.baseURL}/api/tools/${toolId}/load-stream?token=${encodeURIComponent(token)}`;
+      const es = new EventSource(url);
+
+      es.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.status === "loading") {
+            setLoadingTools((prev) => new Map(prev).set(toolId, { progress: data.progress, message: data.message }));
+          } else if (data.status === "loaded") {
+            setLoadingTools((prev) => { const n = new Map(prev); n.delete(toolId); return n; });
+            es.close();
+            loadTools();
+            resolve();
+          } else if (data.status === "error") {
+            setLoadingTools((prev) => { const n = new Map(prev); n.delete(toolId); return n; });
+            es.close();
+            loadTools();
+            reject(new Error(data.message));
+          }
+        } catch (e) {
+          console.error("SSE parse error:", e);
+        }
+      };
+
+      es.onerror = () => {
+        setLoadingTools((prev) => { const n = new Map(prev); n.delete(toolId); return n; });
+        es.close();
+        loadTools();
+        reject(new Error("SSE connection failed"));
+      };
+    });
+  }, [loadTools]);
+
+  const handleLoadSuggested = async () => {
+    const toolsToLoad = SUGGESTED_TOOL_IDS.filter((id) => {
+      const tool = tools.find((t) => t.id === id);
+      return tool && tool.status !== "loaded" && tool.status !== "unavailable" && tool.status !== "loading";
+    });
+
+    if (toolsToLoad.length === 0) return;
+
+    suggestedAbortRef.current = false;
+    setSuggestedLoading({ currentId: null, completedCount: 0, totalCount: toolsToLoad.length });
+
+    let completed = 0;
+    for (const toolId of toolsToLoad) {
+      if (suggestedAbortRef.current) break;
+      setSuggestedLoading({ currentId: toolId, completedCount: completed, totalCount: toolsToLoad.length });
+      try {
+        await loadToolAndAwait(toolId);
+      } catch (err) {
+        console.error(`Suggested load failed for ${toolId}:`, err);
+      }
+      completed++;
+    }
+
+    setSuggestedLoading(null);
+    await loadTools();
+  };
+
   const groupedTools: ToolsByCategory = tools.reduce((acc, tool) => {
     const category = tool.category || "other";
     if (!acc[category]) acc[category] = [];
@@ -372,28 +482,87 @@ export function ToolsSettings() {
       </div>
 
       {/* Controls */}
-      <Card className="p-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Button variant="primary" size="sm" onClick={handleBulkLoadAll} disabled={hasActiveSSE}>
-            Load All
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => handleBulkLoadSelected(Array.from(selectedToolIds))}
-            disabled={selectedToolIds.size === 0 || hasActiveSSE}
-          >
-            Load Selected ({selectedToolIds.size})
-          </Button>
+      <Card className="p-4 space-y-3">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Load Suggested — sequential, GPU-friendly */}
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleLoadSuggested}
+              disabled={!!suggestedLoading || hasActiveSSE}
+              className="gap-1.5"
+            >
+              {suggestedLoading ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  {suggestedLoading.currentId
+                    ? `${suggestedLoading.completedCount + 1}/${suggestedLoading.totalCount}: ${tools.find(t => t.id === suggestedLoading.currentId)?.name ?? suggestedLoading.currentId}`
+                    : "Starting..."}
+                </>
+              ) : (
+                "Load Suggested"
+              )}
+            </Button>
+
+            <div className="h-4 w-px bg-zinc-700" />
+
+            <Button variant="secondary" size="sm" onClick={handleBulkLoadAll} disabled={hasActiveSSE || !!suggestedLoading}>
+              Load All
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => handleBulkLoadSelected(Array.from(selectedToolIds))}
+              disabled={selectedToolIds.size === 0 || hasActiveSSE || !!suggestedLoading}
+            >
+              Load Selected ({selectedToolIds.size})
+            </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            {suggestedLoading && (
+              <button
+                onClick={() => { suggestedAbortRef.current = true; }}
+                className="text-xs text-red-400 hover:text-red-300 transition-colors"
+              >
+                Cancel
+              </button>
+            )}
+            <Button variant="ghost" size="sm" onClick={handleSelectAll}>
+              Select All
+            </Button>
+            <Button variant="ghost" size="sm" onClick={handleClearSelection}>
+              Clear
+            </Button>
+            <div className="h-4 w-px bg-zinc-700" />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRefreshStatus}
+              disabled={isRefreshing}
+              className="gap-1.5"
+              title="Refresh tool statuses"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+              {isRefreshing ? "Refreshing..." : "Refresh"}
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={handleSelectAll}>
-            Select All
-          </Button>
-          <Button variant="ghost" size="sm" onClick={handleClearSelection}>
-            Clear
-          </Button>
-        </div>
+
+        {/* Suggested loading progress bar */}
+        {suggestedLoading && (
+          <div className="space-y-1">
+            <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full transition-all duration-500"
+                style={{ width: `${(suggestedLoading.completedCount / suggestedLoading.totalCount) * 100}%` }}
+              />
+            </div>
+            <p className="text-xs text-zinc-500">
+              Loading sequentially — {suggestedLoading.completedCount} of {suggestedLoading.totalCount} done
+            </p>
+          </div>
+        )}
       </Card>
 
       {error && (
@@ -455,6 +624,11 @@ export function ToolsSettings() {
                                 aria-label={`Select ${tool.name}`}
                               />
                               <h4 className="font-semibold text-white">{tool.name}</h4>
+                              {SUGGESTED_TOOL_IDS.includes(tool.id) && (
+                                <span className="text-[10px] font-medium text-blue-400/70 border border-blue-500/20 rounded px-1 py-0.5 leading-none">
+                                  suggested
+                                </span>
+                              )}
                               <Badge variant={getStatusBadgeVariant(tool.status)} size="sm">
                                 <span className="flex items-center gap-1">
                                   {getStatusIcon(tool.status)}

@@ -18,7 +18,7 @@ import { ChatInterface } from "../chat/ChatInterface";
 export function AppLayout() {
   return (
     <AuthGuard>
-      <div className="h-screen w-screen flex flex-col bg-zinc-950 overflow-hidden">
+      <div className="h-screen w-screen flex flex-col bg-zinc-950 overflow-hidden" style={{ backgroundImage: "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(59,130,246,0.05) 0%, transparent 60%)" }}>
         {/* Header */}
         <Header />
 

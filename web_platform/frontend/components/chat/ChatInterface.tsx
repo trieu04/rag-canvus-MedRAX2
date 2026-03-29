@@ -11,7 +11,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { MoreHorizontal, FileImage } from "lucide-react";
+import { MoreHorizontal, FileImage, MessageSquarePlus, Upload } from "lucide-react";
 import { Menu } from "@headlessui/react";
 import { useAppStore } from "../../lib/store/appStore";
 import { getMessages, streamChatResponse } from "../../lib/api/messages";
@@ -22,6 +22,7 @@ import { Message } from "./Message";
 import { ChatInput } from "./ChatInput";
 import { SuggestedQuestions } from "./SuggestedQuestions";
 import { ScanGalleryDrawer } from "../scans/ScanGalleryDrawer";
+import { ScanUploadZone } from "../scans/ScanUploadZone";
 import { Modal } from "../ui/Modal";
 import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
@@ -29,6 +30,7 @@ import { Spinner } from "../ui/Spinner";
 import { classNames } from "../../lib/utils";
 import type { Chat } from "../../lib/types/chat";
 import type { SuggestedQuestion } from "../../lib/types/question";
+import type { Scan } from "../../lib/types/scan";
 import { ToolOutputsSidebar } from "../tool-outputs/ToolOutputsSidebar";
 
 export function ChatInterface() {
@@ -56,6 +58,16 @@ export function ChatInterface() {
   const [toolOutputsMessageId, setToolOutputsMessageId] = useState<string | null>(null);
   const [isToolOutputsSidebarOpen, setIsToolOutputsSidebarOpen] = useState(false);
 
+  // First-run upload screen (shown when a chat has no messages yet)
+  const [firstRunSkipped, setFirstRunSkipped] = useState(false);
+  const [firstRunScans, setFirstRunScans] = useState<Scan[]>([]);
+
+  // Reset first-run state whenever the user switches to a different chat
+  useEffect(() => {
+    setFirstRunSkipped(false);
+    setFirstRunScans([]);
+  }, [selectedChatId]);
+
   // Store abort function for ongoing stream
   const abortStreamRef = useRef<(() => void) | null>(null);
   const currentStreamChatIdRef = useRef<string | null>(null);
@@ -71,6 +83,7 @@ export function ChatInterface() {
   ]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const hasSelectedChat = Boolean(selectedChatId);
   const chatMessages = useMemo(() => {
     return selectedChatId ? messages[selectedChatId] || [] : [];
   }, [selectedChatId, messages]);
@@ -310,30 +323,30 @@ export function ChatInterface() {
       <div className="flex-1 flex flex-col min-h-0">
         {/* Header */}
         {currentChat && (
-          <div className="h-16 border-b border-zinc-800 flex items-center justify-between px-6 bg-zinc-900 flex-shrink-0">
-            <div className="flex items-center space-x-3">
-              <div className="flex flex-col">
-                <h2 className="text-lg font-semibold text-white">{currentChat.name}</h2>
-                <div className="text-xs text-zinc-500">
-                  {currentChat.messageCount} messages • {currentChat.scanCount} scans
+          <div className="h-14 border-b border-zinc-800/60 flex items-center justify-between px-5 bg-zinc-900/40 backdrop-blur-sm flex-shrink-0">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="min-w-0">
+                <h2 className="text-sm font-semibold text-white truncate">{currentChat.name}</h2>
+                <div className="text-xs text-zinc-500 mt-0.5">
+                  {currentChat.messageCount} messages · {currentChat.scanCount} scans
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-1 shrink-0">
               <button
                 onClick={() => setIsScanGalleryOpen(true)}
-                className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-md transition-colors"
+                className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-all duration-150"
                 title="View all scans"
               >
-                <FileImage className="h-5 w-5" />
+                <FileImage className="h-4 w-4" />
               </button>
 
               <Menu as="div" className="relative">
-                <Menu.Button className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-md transition-colors">
-                  <MoreHorizontal className="h-5 w-5" />
+                <Menu.Button className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-all duration-150">
+                  <MoreHorizontal className="h-4 w-4" />
                 </Menu.Button>
-                <Menu.Items className="absolute right-0 mt-2 w-48 origin-top-right bg-zinc-900 border border-zinc-800 rounded-lg shadow-xl focus:outline-none z-50">
+                <Menu.Items className="absolute right-0 mt-2 w-48 origin-top-right bg-zinc-900 border border-zinc-800/80 rounded-xl shadow-2xl shadow-black/40 focus:outline-none z-50 overflow-hidden">
                   <div className="py-1">
                     <Menu.Item>
                       {({ active }) => (
@@ -343,8 +356,8 @@ export function ChatInterface() {
                             setIsRenameModalOpen(true);
                           }}
                           className={classNames(
-                            "w-full text-left px-4 py-2 text-sm",
-                            active ? "bg-zinc-800 text-white" : "text-zinc-300"
+                            "w-full text-left px-3.5 py-2 text-sm",
+                            active ? "bg-zinc-800/80 text-white" : "text-zinc-300"
                           )}
                         >
                           Rename Chat
@@ -356,8 +369,8 @@ export function ChatInterface() {
                         <button
                           onClick={() => setIsScanGalleryOpen(true)}
                           className={classNames(
-                            "w-full text-left px-4 py-2 text-sm",
-                            active ? "bg-zinc-800 text-white" : "text-zinc-300"
+                            "w-full text-left px-3.5 py-2 text-sm",
+                            active ? "bg-zinc-800/80 text-white" : "text-zinc-300"
                           )}
                         >
                           View All Scans
@@ -369,8 +382,8 @@ export function ChatInterface() {
                         <button
                           onClick={openMemoryStats}
                           className={classNames(
-                            "w-full text-left px-4 py-2 text-sm",
-                            active ? "bg-zinc-800 text-white" : "text-zinc-300"
+                            "w-full text-left px-3.5 py-2 text-sm",
+                            active ? "bg-zinc-800/80 text-white" : "text-zinc-300"
                           )}
                         >
                           View Memory Stats
@@ -382,21 +395,22 @@ export function ChatInterface() {
                         <button
                           onClick={handleClearMemory}
                           className={classNames(
-                            "w-full text-left px-4 py-2 text-sm",
-                            active ? "bg-zinc-800 text-white" : "text-zinc-300"
+                            "w-full text-left px-3.5 py-2 text-sm",
+                            active ? "bg-zinc-800/80 text-white" : "text-zinc-300"
                           )}
                         >
                           Clear Memory
                         </button>
                       )}
                     </Menu.Item>
+                    <div className="border-t border-zinc-800/60 my-1" />
                     <Menu.Item>
                       {({ active }) => (
                         <button
                           onClick={handleDeleteChat}
                           className={classNames(
-                            "w-full text-left px-4 py-2 text-sm",
-                            active ? "bg-zinc-800 text-red-400" : "text-red-500"
+                            "w-full text-left px-3.5 py-2 text-sm",
+                            active ? "bg-zinc-800/80 text-red-400" : "text-red-500"
                           )}
                         >
                           Delete Chat
@@ -421,6 +435,18 @@ export function ChatInterface() {
               <div className="flex items-center justify-center min-h-[300px]">
                 <div className="text-red-400 text-sm">{error}</div>
               </div>
+            ) : !hasSelectedChat ? (
+              <div className="flex items-center justify-center min-h-[420px]">
+                <div className="max-w-sm w-full text-center">
+                  <div className="mx-auto mb-5 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-500/10 border border-blue-500/20 text-blue-400 shadow-lg shadow-blue-500/10">
+                    <MessageSquarePlus className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-base font-semibold text-white">Select a chat to get started</h3>
+                  <p className="mt-2 text-sm text-zinc-500 leading-relaxed max-w-xs mx-auto">
+                    Choose an existing chat from the sidebar, or create a new patient/chat to start analyzing scans.
+                  </p>
+                </div>
+              </div>
             ) : chatMessages.length > 0 ? (
               <>
                 {chatMessages.map((message) => (
@@ -432,8 +458,41 @@ export function ChatInterface() {
                 ))}
                 <div ref={messagesEndRef} />
               </>
+            ) : !firstRunSkipped ? (
+              /* First-run: no messages yet → prompt the user to upload a scan */
+              <div className="flex items-center justify-center min-h-[420px] px-4">
+                <div className="w-full max-w-lg">
+                  <div className="text-center mb-6">
+                    <div className="mx-auto mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-500/10 border border-blue-500/20 text-blue-400 shadow-lg shadow-blue-500/10">
+                      <Upload className="h-6 w-6" />
+                    </div>
+                    <h3 className="text-base font-semibold text-white">Upload a scan to get started</h3>
+                    <p className="mt-1.5 text-sm text-zinc-500 leading-relaxed">
+                      Drop your X-ray, CT, or DICOM file here — the AI will analyse it and answer your questions.
+                    </p>
+                  </div>
+
+                  <ScanUploadZone
+                    chatId={selectedChatId!}
+                    onUploadComplete={(scans) => {
+                      setFirstRunScans(scans);
+                      setFirstRunSkipped(true);
+                    }}
+                  />
+
+                  <div className="mt-4 text-center">
+                    <button
+                      onClick={() => setFirstRunSkipped(true)}
+                      className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
+                    >
+                      Skip — I&apos;ll upload later
+                    </button>
+                  </div>
+                </div>
+              </div>
             ) : (
-              <div className="flex items-center justify-center min-h-[300px] text-zinc-500 text-sm">
+              /* Skipped first-run: just show a minimal prompt */
+              <div className="flex items-center justify-center min-h-[300px] text-zinc-600 text-sm">
                 No messages yet. Start the conversation below.
               </div>
             )}
@@ -442,16 +501,23 @@ export function ChatInterface() {
 
         {/* Bottom Section - Fixed at bottom, never scrolls away */}
         <div className="flex-shrink-0 bg-zinc-950">
-          {/* Suggested Questions */}
-          <SuggestedQuestions questions={suggestedQuestions} onSelect={handleQuestionClick} />
+          {hasSelectedChat && (
+            <>
+              {/* Suggested questions — only relevant once there are messages */}
+              {chatMessages.length > 0 && (
+                <SuggestedQuestions questions={suggestedQuestions} onSelect={handleQuestionClick} />
+              )}
 
-          {/* Input Area */}
-          {selectedChatId && (
-            <ChatInput
-              chatId={selectedChatId}
-              onSend={handleSendMessage}
-              disabled={isSendingMessage || isLoadingMessages}
-            />
+              {/* Hide chat input while the first-run upload screen is visible */}
+              {(firstRunSkipped || chatMessages.length > 0) && (
+                <ChatInput
+                  chatId={selectedChatId!}
+                  onSend={handleSendMessage}
+                  disabled={isSendingMessage || isLoadingMessages}
+                  initialScans={firstRunScans.length > 0 ? firstRunScans : undefined}
+                />
+              )}
+            </>
           )}
         </div>
       </div>
