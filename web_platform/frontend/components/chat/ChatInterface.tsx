@@ -11,7 +11,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { MoreHorizontal, FileImage, MessageSquarePlus } from "lucide-react";
+import { MoreHorizontal, FileImage, MessageSquarePlus, Upload } from "lucide-react";
 import { Menu } from "@headlessui/react";
 import { useAppStore } from "../../lib/store/appStore";
 import { getMessages, streamChatResponse } from "../../lib/api/messages";
@@ -22,6 +22,7 @@ import { Message } from "./Message";
 import { ChatInput } from "./ChatInput";
 import { SuggestedQuestions } from "./SuggestedQuestions";
 import { ScanGalleryDrawer } from "../scans/ScanGalleryDrawer";
+import { ScanUploadZone } from "../scans/ScanUploadZone";
 import { Modal } from "../ui/Modal";
 import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
@@ -29,6 +30,7 @@ import { Spinner } from "../ui/Spinner";
 import { classNames } from "../../lib/utils";
 import type { Chat } from "../../lib/types/chat";
 import type { SuggestedQuestion } from "../../lib/types/question";
+import type { Scan } from "../../lib/types/scan";
 import { ToolOutputsSidebar } from "../tool-outputs/ToolOutputsSidebar";
 
 export function ChatInterface() {
@@ -55,6 +57,16 @@ export function ChatInterface() {
   const [isRenamingChat, setIsRenamingChat] = useState(false);
   const [toolOutputsMessageId, setToolOutputsMessageId] = useState<string | null>(null);
   const [isToolOutputsSidebarOpen, setIsToolOutputsSidebarOpen] = useState(false);
+
+  // First-run upload screen (shown when a chat has no messages yet)
+  const [firstRunSkipped, setFirstRunSkipped] = useState(false);
+  const [firstRunScans, setFirstRunScans] = useState<Scan[]>([]);
+
+  // Reset first-run state whenever the user switches to a different chat
+  useEffect(() => {
+    setFirstRunSkipped(false);
+    setFirstRunScans([]);
+  }, [selectedChatId]);
 
   // Store abort function for ongoing stream
   const abortStreamRef = useRef<(() => void) | null>(null);
@@ -446,8 +458,41 @@ export function ChatInterface() {
                 ))}
                 <div ref={messagesEndRef} />
               </>
+            ) : !firstRunSkipped ? (
+              /* First-run: no messages yet → prompt the user to upload a scan */
+              <div className="flex items-center justify-center min-h-[420px] px-4">
+                <div className="w-full max-w-lg">
+                  <div className="text-center mb-6">
+                    <div className="mx-auto mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-500/10 border border-blue-500/20 text-blue-400 shadow-lg shadow-blue-500/10">
+                      <Upload className="h-6 w-6" />
+                    </div>
+                    <h3 className="text-base font-semibold text-white">Upload a scan to get started</h3>
+                    <p className="mt-1.5 text-sm text-zinc-500 leading-relaxed">
+                      Drop your X-ray, CT, or DICOM file here — the AI will analyse it and answer your questions.
+                    </p>
+                  </div>
+
+                  <ScanUploadZone
+                    chatId={selectedChatId!}
+                    onUploadComplete={(scans) => {
+                      setFirstRunScans(scans);
+                      setFirstRunSkipped(true);
+                    }}
+                  />
+
+                  <div className="mt-4 text-center">
+                    <button
+                      onClick={() => setFirstRunSkipped(true)}
+                      className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
+                    >
+                      Skip — I&apos;ll upload later
+                    </button>
+                  </div>
+                </div>
+              </div>
             ) : (
-              <div className="flex items-center justify-center min-h-[300px] text-zinc-500 text-sm">
+              /* Skipped first-run: just show a minimal prompt */
+              <div className="flex items-center justify-center min-h-[300px] text-zinc-600 text-sm">
                 No messages yet. Start the conversation below.
               </div>
             )}
@@ -458,15 +503,20 @@ export function ChatInterface() {
         <div className="flex-shrink-0 bg-zinc-950">
           {hasSelectedChat && (
             <>
-              {/* Suggested Questions */}
-              <SuggestedQuestions questions={suggestedQuestions} onSelect={handleQuestionClick} />
+              {/* Suggested questions — only relevant once there are messages */}
+              {chatMessages.length > 0 && (
+                <SuggestedQuestions questions={suggestedQuestions} onSelect={handleQuestionClick} />
+              )}
 
-              {/* Input Area */}
-              <ChatInput
-                chatId={selectedChatId!}
-                onSend={handleSendMessage}
-                disabled={isSendingMessage || isLoadingMessages}
-              />
+              {/* Hide chat input while the first-run upload screen is visible */}
+              {(firstRunSkipped || chatMessages.length > 0) && (
+                <ChatInput
+                  chatId={selectedChatId!}
+                  onSend={handleSendMessage}
+                  disabled={isSendingMessage || isLoadingMessages}
+                  initialScans={firstRunScans.length > 0 ? firstRunScans : undefined}
+                />
+              )}
             </>
           )}
         </div>

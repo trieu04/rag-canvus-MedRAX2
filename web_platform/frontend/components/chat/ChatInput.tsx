@@ -34,6 +34,8 @@ interface ChatInputProps {
   disabled?: boolean;
   /** Custom placeholder text */
   placeholder?: string;
+  /** Pre-attach scans (e.g. from the first-run upload screen) */
+  initialScans?: Scan[];
 }
 
 export function ChatInput({
@@ -41,14 +43,24 @@ export function ChatInput({
   onSend,
   disabled = false,
   placeholder = "Ask a question or describe what you need...",
+  initialScans,
 }: ChatInputProps) {
   const [content, setContent] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [uploadedScans, setUploadedScans] = useState<Scan[]>([]);
+  const [uploadedScans, setUploadedScans] = useState<Scan[]>(initialScans ?? []);
   const [sendError, setSendError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const prevChatIdRef = useRef<string>(chatId);
+
+  // Populate from initialScans when they arrive (first-run upload)
+  useEffect(() => {
+    if (initialScans && initialScans.length > 0) {
+      setUploadedScans(initialScans);
+      // Auto-focus textarea so the user can immediately type their question
+      setTimeout(() => textareaRef.current?.focus(), 50);
+    }
+  }, [initialScans]);
 
   // Clear uploaded scans when chatId changes (switching chats)
   useEffect(() => {
