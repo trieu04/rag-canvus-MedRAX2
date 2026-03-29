@@ -4,8 +4,11 @@
  * Central configuration for API base URL and settings.
  */
 
+const rawBaseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const normalizedBaseURL = rawBaseURL.replace(/\/+$/, "");
+
 export const API_CONFIG = {
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
+  baseURL: normalizedBaseURL,
   timeout: parseInt(process.env.NEXT_PUBLIC_API_TIMEOUT || "30000"),
   headers: {
     "Content-Type": "application/json",

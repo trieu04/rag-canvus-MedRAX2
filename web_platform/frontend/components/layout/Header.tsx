@@ -40,30 +40,38 @@ export function Header() {
   };
 
   return (
-    <header className="h-16 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between px-6 flex-shrink-0">
+    <header className="h-14 bg-zinc-900/80 backdrop-blur-sm border-b border-zinc-800/60 flex items-center justify-between px-5 flex-shrink-0">
       {/* Left: Logo/Title */}
-      <div className="flex items-center space-x-3">
-        <div className="text-2xl font-bold text-blue-500">MedRAX</div>
-        <div className="text-sm text-zinc-500">Medical Reasoning Agent</div>
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-md shadow-blue-500/20">
+            <span className="text-white text-xs font-bold">M</span>
+          </div>
+          <span className="text-lg font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent tracking-tight">
+            MedRAX
+          </span>
+        </div>
+        <div className="h-4 w-px bg-zinc-700" />
+        <div className="text-xs text-zinc-500 font-medium">Medical Reasoning Agent</div>
       </div>
 
       {/* Right: Profile + Settings */}
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center gap-2">
         {/* Settings Button */}
         <button
           onClick={handleSettings}
-          className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-md transition-colors"
+          className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-all duration-150"
           title="Settings"
         >
-          <Settings className="h-5 w-5" />
+          <Settings className="h-4.5 w-4.5" />
         </button>
 
         {/* Profile Dropdown */}
         <Menu as="div" className="relative">
-          <Menu.Button className="flex items-center space-x-2 px-3 py-2 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-md transition-colors">
+          <Menu.Button className="flex items-center gap-2 px-3 py-1.5 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-all duration-150">
             <Avatar name={doctor?.name || null} size="sm" />
             <span className="text-sm font-medium">{doctor?.name || "User"}</span>
-            <ChevronDown className="h-4 w-4" />
+            <ChevronDown className="h-3.5 w-3.5 text-zinc-500" />
           </Menu.Button>
 
           <Transition
@@ -75,24 +83,24 @@ export function Header() {
             leaveFrom="transform opacity-100 scale-100"
             leaveTo="transform opacity-0 scale-95"
           >
-            <Menu.Items className="absolute right-0 mt-2 w-56 origin-top-right bg-zinc-900 border border-zinc-800 rounded-lg shadow-xl focus:outline-none z-50">
+            <Menu.Items className="absolute right-0 mt-2 w-52 origin-top-right bg-zinc-900 border border-zinc-800/80 rounded-xl shadow-2xl shadow-black/40 focus:outline-none z-50 overflow-hidden">
               <div className="py-1">
                 <Menu.Item>
                   {({ active }) => (
                     <button
                       onClick={handleSettings}
                       className={classNames(
-                        "w-full flex items-center px-4 py-2 text-sm",
-                        active ? "bg-zinc-800 text-white" : "text-zinc-300"
+                        "w-full flex items-center px-3.5 py-2 text-sm gap-3",
+                        active ? "bg-zinc-800/80 text-white" : "text-zinc-300"
                       )}
                     >
-                      <User className="mr-3 h-4 w-4" />
+                      <User className="h-4 w-4 shrink-0" />
                       Profile Settings
                     </button>
                   )}
                 </Menu.Item>
 
-                <div className="border-t border-zinc-800 my-1"></div>
+                <div className="border-t border-zinc-800/60 my-1" />
 
                 <Menu.Item>
                   {({ active }) => (
@@ -100,12 +108,12 @@ export function Header() {
                       onClick={handleLogout}
                       disabled={isLoggingOut}
                       className={classNames(
-                        "w-full flex items-center px-4 py-2 text-sm",
-                        active ? "bg-zinc-800 text-red-400" : "text-red-500",
+                        "w-full flex items-center px-3.5 py-2 text-sm gap-3",
+                        active ? "bg-zinc-800/80 text-red-400" : "text-red-500",
                         isLoggingOut && "opacity-50 cursor-not-allowed"
                       )}
                     >
-                      <LogOut className="mr-3 h-4 w-4" />
+                      <LogOut className="h-4 w-4 shrink-0" />
                       {isLoggingOut ? "Logging out..." : "Logout"}
                     </button>
                   )}

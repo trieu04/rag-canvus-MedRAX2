@@ -60,6 +60,15 @@ if [ ! -f "frontend/.env.local" ]; then
     echo "   Created .env.local with default API URL"
 fi
 
+# Resolve API URL from frontend/.env.local (fallback to localhost)
+API_URL="http://localhost:8000"
+if [ -f "frontend/.env.local" ]; then
+    ENV_API_URL=$(rg -n "^NEXT_PUBLIC_API_URL=" frontend/.env.local | awk -F'=' '{print $2}' | tail -n 1)
+    if [ -n "$ENV_API_URL" ]; then
+        API_URL="$ENV_API_URL"
+    fi
+fi
+
 # Display server info
 echo ""
 echo "=============================================="
@@ -68,7 +77,7 @@ echo ""
 echo "Frontend will be available at:"
 echo "  http://localhost:3000"
 echo ""
-echo "API Backend: http://localhost:8000"
+echo "API Backend: $API_URL"
 echo ""
 echo "First load might take ~10 seconds to compile"
 echo "Subsequent changes will be instant!"
