@@ -522,8 +522,7 @@ export function ChatInterface() {
                   )}
                 </div>
               </div>
-            ) : (
-              /* Skipped first-run: just show a minimal prompt */
+            ) : isAutoAnalyzing || isSendingMessage ? null : (
               <div className="flex items-center justify-center min-h-[300px] text-zinc-600 text-sm">
                 No messages yet. Start the conversation below.
               </div>
