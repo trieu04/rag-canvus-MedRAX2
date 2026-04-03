@@ -552,6 +552,19 @@ export function ChatInterface() {
                   )}
                 </div>
               </div>
+            ) : isAutoAnalyzing || isSendingMessage ? (
+              <div className="flex items-center justify-center min-h-[320px] px-4">
+                <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 text-center">
+                  <div className="mx-auto mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-400">
+                    <Spinner className="h-5 w-5" />
+                  </div>
+                  <h3 className="text-sm font-semibold text-white">Analyzing uploaded scan</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+                    Preparing the initial report and running the relevant tools. Results will appear here as soon as the
+                    analysis stream starts.
+                  </p>
+                </div>
+              </div>
             ) : (
               /* Skipped first-run: just show a minimal prompt */
               <div className="flex items-center justify-center min-h-[300px] text-zinc-600 text-sm">
