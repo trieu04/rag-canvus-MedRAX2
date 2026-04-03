@@ -15,6 +15,7 @@ import { MoreHorizontal, FileImage, MessageSquarePlus, Upload } from "lucide-rea
 import { Menu } from "@headlessui/react";
 import { useAppStore } from "../../lib/store/appStore";
 import { getMessages, streamChatResponse } from "../../lib/api/messages";
+import { getAutoAnalysisPrompt } from "../../lib/api/system";
 import { getChat, updateChat, deleteChat } from "../../lib/api/chats";
 import { clearChatMemory, getChatMemoryStats, type MemoryStats } from "../../lib/api/memory";
 import type { MessageWithDetails, SSEEvent } from "../../lib/types/message";
@@ -61,11 +62,13 @@ export function ChatInterface() {
   // First-run upload screen (shown when a chat has no messages yet)
   const [firstRunSkipped, setFirstRunSkipped] = useState(false);
   const [firstRunScans, setFirstRunScans] = useState<Scan[]>([]);
+  const [isAutoAnalyzing, setIsAutoAnalyzing] = useState(false);
 
   // Reset first-run state whenever the user switches to a different chat
   useEffect(() => {
     setFirstRunSkipped(false);
     setFirstRunScans([]);
+    setIsAutoAnalyzing(false);
   }, [selectedChatId]);
 
   // Store abort function for ongoing stream
@@ -474,20 +477,37 @@ export function ChatInterface() {
 
                   <ScanUploadZone
                     chatId={selectedChatId!}
-                    onUploadComplete={(scans) => {
+                    onUploadComplete={async (scans) => {
                       setFirstRunScans(scans);
-                      setFirstRunSkipped(true);
+                      setIsAutoAnalyzing(true);
+                      try {
+                        const prompt = await getAutoAnalysisPrompt();
+                        setFirstRunSkipped(true);
+                        await handleSendMessage(prompt, scans.map((s) => s.id));
+                      } catch {
+                        // If prompt fetch fails, just open the chat normally
+                        setFirstRunSkipped(true);
+                      } finally {
+                        setIsAutoAnalyzing(false);
+                      }
                     }}
                   />
 
-                  <div className="mt-4 text-center">
-                    <button
-                      onClick={() => setFirstRunSkipped(true)}
-                      className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
-                    >
-                      Skip — I&apos;ll upload later
-                    </button>
-                  </div>
+                  {isAutoAnalyzing ? (
+                    <div className="mt-4 flex items-center justify-center gap-2 text-xs text-blue-400">
+                      <Spinner className="h-3 w-3" />
+                      Starting analysis…
+                    </div>
+                  ) : (
+                    <div className="mt-4 text-center">
+                      <button
+                        onClick={() => setFirstRunSkipped(true)}
+                        className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
+                      >
+                        Skip — I&apos;ll upload later
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
