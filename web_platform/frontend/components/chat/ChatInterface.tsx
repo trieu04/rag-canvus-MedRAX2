@@ -34,6 +34,21 @@ import type { SuggestedQuestion } from "../../lib/types/question";
 import type { Scan } from "../../lib/types/scan";
 import { ToolOutputsSidebar } from "../tool-outputs/ToolOutputsSidebar";
 
+const AUTO_ANALYSIS_VISIBLE_MESSAGE = "Initial scan analysis requested.";
+
+function formatToolProgressLabel(toolName: unknown): string {
+  if (typeof toolName !== "string" || toolName.trim().length === 0) {
+    return "Running analysis tools...";
+  }
+
+  const prettyName = toolName
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return `Running ${prettyName}...`;
+}
+
 export function ChatInterface() {
   const {
     selectedChatId,
@@ -146,7 +161,14 @@ export function ChatInterface() {
     };
   }, []);
 
-  const handleSendMessage = async (content: string, scanIds?: string[]) => {
+  const handleSendMessage = async (
+    content: string,
+    scanIds?: string[],
+    options?: {
+      displayContent?: string;
+      initialAssistantStatus?: string;
+    }
+  ) => {
     if (!selectedChatId) return;
 
     // Store the chatId at the start of this request
@@ -157,13 +179,12 @@ export function ChatInterface() {
 
     setSendingMessage(true);
     setError(null);
-
     // Add user message optimistically
     const tempUserMessage: MessageWithDetails = {
       id: `temp-${Date.now()}`,
       chatId: requestChatId,
       role: "user",
-      content,
+      content: options?.displayContent ?? content,
       createdAt: new Date().toISOString(),
       attachedScans: [],
       toolExecutions: [],
@@ -175,7 +196,7 @@ export function ChatInterface() {
       id: `temp-assistant-${Date.now()}`,
       chatId: requestChatId,
       role: "assistant",
-      content: "",
+      content: options?.initialAssistantStatus ?? "Preparing response...",
       createdAt: new Date().toISOString(),
       attachedScans: [],
       toolExecutions: [],
@@ -210,6 +231,7 @@ export function ChatInterface() {
       requestChatId,
       content,
       scanIds || [],
+      { displayContent: options?.displayContent },
       (event) => {
         // Ignore events if chat has switched
         if (currentStreamChatIdRef.current !== requestChatId) {
@@ -221,6 +243,13 @@ export function ChatInterface() {
           console.log("Message started:", event.data.messageId);
           // Track the user message id for this stream
           lastStreamUserMessageIdRef.current = (event.data.messageId as string) || null;
+        } else if (event.type === "status") {
+          const nextStatus = (event.data.message as string) || "Processing...";
+          const currentMessages = messages[requestChatId] || [];
+          const updatedMessages = currentMessages.map((msg) =>
+            msg.id === tempAssistantMessage.id ? { ...msg, content: nextStatus } : msg
+          );
+          setMessages(requestChatId, updatedMessages);
         } else if (event.type === "content_chunk") {
           // Update assistant message content in real-time
           assistantContent += (event.data.content as string) || "";
@@ -232,6 +261,14 @@ export function ChatInterface() {
           setMessages(requestChatId, updatedMessages);
         } else if (event.type === "tool_start") {
           console.log("Tool started:", event.data);
+          const nextStatus = formatToolProgressLabel(event.data.tool_name || event.data.toolName);
+          if (!assistantContent) {
+            const currentMessages = messages[requestChatId] || [];
+            const updatedMessages = currentMessages.map((msg) =>
+              msg.id === tempAssistantMessage.id ? { ...msg, content: nextStatus } : msg
+            );
+            setMessages(requestChatId, updatedMessages);
+          }
           handleToolEventOpen(event);
         } else if (event.type === "tool_output") {
           console.log("Tool output:", event.data);
@@ -482,10 +519,15 @@ export function ChatInterface() {
                       setIsAutoAnalyzing(true);
                       try {
                         const prompt = await getAutoAnalysisPrompt();
+                        setFirstRunScans([]);
                         setFirstRunSkipped(true);
-                        await handleSendMessage(prompt, scans.map((s) => s.id));
+                        await handleSendMessage(prompt, scans.map((s) => s.id), {
+                          displayContent: AUTO_ANALYSIS_VISIBLE_MESSAGE,
+                          initialAssistantStatus: "Analyzing uploaded scan and preparing the initial report...",
+                        });
                       } catch {
                         // If prompt fetch fails, just open the chat normally
+                        setFirstRunScans(scans);
                         setFirstRunSkipped(true);
                       } finally {
                         setIsAutoAnalyzing(false);

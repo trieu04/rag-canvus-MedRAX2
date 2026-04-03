@@ -38,6 +38,7 @@ export interface MessageWithDetails extends Message {
  */
 export type SSEEventType =
   | "message_start"
+  | "status"
   | "content_chunk"
   | "tool_start"
   | "tool_output"
@@ -51,6 +52,7 @@ export interface SSEEvent {
   data: {
     messageId?: string;
     content?: string;
+    message?: string;
     toolName?: string;
     toolId?: string;
     error?: string;

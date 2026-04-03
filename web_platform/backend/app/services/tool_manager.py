@@ -80,17 +80,16 @@ _import_lock = threading.Lock()
 import os
 os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
 
-# Set cache dirs from config at module load time so that every import of
-# torch / transformers / huggingface_hub respects the project-local paths
-# configured in .env, rather than silently falling back to ~/.cache/*.
+# Fix TORCH_HOME: the original code hardcoded ~/.cache/torch regardless of
+# what TORCH_CACHE_DIR is set to in .env. We only override torch here.
+#
+# We intentionally leave HF_HOME at its default (~/.cache/huggingface) so that
+# the HuggingFace login token stored there remains accessible. Redirecting
+# HF_HOME to a project-local dir would break gated model access (401 errors)
+# because the token file would no longer be found.
 _torch_cache = os.path.expanduser(settings.TORCH_CACHE_DIR)
-_hf_cache = os.path.expanduser(settings.HUGGINGFACE_CACHE_DIR)
 os.makedirs(_torch_cache, exist_ok=True)
-os.makedirs(_hf_cache, exist_ok=True)
 os.environ['TORCH_HOME'] = _torch_cache
-os.environ['HF_HOME'] = _hf_cache
-os.environ['TRANSFORMERS_CACHE'] = _hf_cache
-os.environ['HUGGINGFACE_HUB_CACHE'] = _hf_cache
 
 
 class ToolStatus:
@@ -769,20 +768,20 @@ class ToolManager:
             # Ensure cache directories exist
             cache_dir = os.path.expanduser(settings.MODEL_CACHE_DIR)
             os.makedirs(cache_dir, exist_ok=True)
-            
-            # Set Hugging Face cache
-            hf_cache = os.path.expanduser(settings.HUGGINGFACE_CACHE_DIR)
-            os.makedirs(hf_cache, exist_ok=True)
-            os.environ['HF_HOME'] = hf_cache
-            os.environ['TRANSFORMERS_CACHE'] = hf_cache
-            
+
+            # NOTE: HF_HOME is intentionally NOT overridden here.
+            # It must stay at its default (~/.cache/huggingface) so that the
+            # HuggingFace login token is found for gated models (e.g. MAIRA-2).
+            # Model files land in MODEL_CACHE_DIR via the explicit cache_dir arg
+            # passed to each model loader below.
+
             # Set Torch cache
             torch_cache = os.path.expanduser(settings.TORCH_CACHE_DIR)
             os.makedirs(torch_cache, exist_ok=True)
             os.environ['TORCH_HOME'] = torch_cache
             
             logger.info(f"Model caching configured for {tool.name}")
-            logger.debug(f"  HF Cache: {hf_cache}")
+            logger.debug(f"  HF Cache: {os.path.expanduser('~/.cache/huggingface')} (default)")
             logger.debug(f"  Torch Cache: {torch_cache}")
 
             device_str: Optional[str] = None

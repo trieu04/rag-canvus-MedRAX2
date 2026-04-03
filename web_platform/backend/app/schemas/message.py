@@ -63,5 +63,7 @@ class MessageWithDetails(MessageResponse):
 
 class StreamRequest(MessageCreate):
     """Schema for streaming request."""
-
-    pass
+    display_content: Optional[str] = Field(
+        default=None,
+        description="Optional user-facing text to store/display instead of the internal prompt content",
+    )

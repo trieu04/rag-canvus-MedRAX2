@@ -11,6 +11,7 @@ from typing import List
 from datetime import datetime
 import asyncio
 import uuid
+from types import SimpleNamespace
 
 from ..database import get_db
 from ..models import Doctor, Patient, Chat, Message, Scan, MessageScan, ToolExecution, ToolExecutionLog
@@ -158,8 +159,11 @@ async def stream_chat_response(
     async def event_generator():
         """Generate SSE events for the streaming response using MedRAX Agent."""
         try:
+            stored_user_content = (stream_data.display_content or stream_data.content).strip()
+            agent_user_content = stream_data.content.strip()
+
             # 1. Create user message
-            user_message = Message(chat_id=chat_id, role="user", content=stream_data.content)
+            user_message = Message(chat_id=chat_id, role="user", content=stored_user_content)
             db.add(user_message)
             db.flush()
 
@@ -213,11 +217,25 @@ async def stream_chat_response(
             # Attach tool executions to the assistant message for more intuitive UI grouping
             processor = ChatProcessor(agent, db, chat_id, tool_target_message_id=assistant_message.id)
 
-            async for event in processor.process_message(user_message, scan_ids=stream_data.scan_ids):
+            # Use the stored DB message for UI/history, but pass the full internal
+            # prompt content to the agent when the frontend requests a hidden prompt.
+            agent_message = SimpleNamespace(
+                id=user_message.id,
+                content=agent_user_content,
+                request_id=None,
+            )
+
+            async for event in processor.process_message(agent_message, scan_ids=stream_data.scan_ids):
                 # Forward events from processor
                 if event["type"] == "content_chunk":
                     assistant_message.content += event["data"].get("content", "")
                     yield create_sse_event("content_chunk", content=event["data"].get("content", ""))
+                elif event["type"] == "status":
+                    yield create_sse_event(
+                        "status",
+                        message=event.get("message", ""),
+                        request_id=event.get("request_id"),
+                    )
                 elif event["type"] == "tool_start":
                     yield create_sse_event("tool_start", **event["data"])
                 elif event["type"] == "tool_output":

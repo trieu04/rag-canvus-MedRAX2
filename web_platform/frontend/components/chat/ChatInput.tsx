@@ -59,6 +59,8 @@ export function ChatInput({
       setUploadedScans(initialScans);
       // Auto-focus textarea so the user can immediately type their question
       setTimeout(() => textareaRef.current?.focus(), 50);
+    } else {
+      setUploadedScans([]);
     }
   }, [initialScans]);
 

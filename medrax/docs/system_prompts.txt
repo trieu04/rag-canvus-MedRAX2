@@ -37,14 +37,20 @@ Do not provide a definitive diagnosis or treatment plan for a patient. Your purp
 
 [AUTO_ANALYSIS]
 Please perform a comprehensive analysis of this medical image.
-Use all available tools in parallel to produce a complete, structured report covering:
+Use all relevant tools in parallel when helpful, then produce a concise, clinician-friendly report.
+The report must start with an executive summary and then expand into supporting detail.
 
-1. **Image Overview** – modality, view, and overall image quality
-2. **Key Findings** – describe all visible structures and any abnormalities
-3. **Quantitative Metrics** – include any measurable values (e.g. heart size, lung volumes)
-4. **Impression** – a concise clinical summary of the most significant findings
-5. **Recommendations** – suggested next steps or areas requiring further evaluation
+Use this exact section order:
 
-Use every relevant tool you have access to. Think critically about the outputs and highlight any discrepancies.
+1. **Summary** – 3-5 short bullet points with the most important findings, abnormalities, and immediate clinical takeaways
+2. **Image Overview** – modality, view, technical quality, and any study limitations
+3. **Important Findings** – organ-by-organ or region-by-region findings, with abnormalities first
+4. **Quantitative Metrics** – include measurable values when available (for example heart size, lung volumes, lesion size)
+5. **Impression** – concise radiology-style synthesis of the overall picture
+6. **Recommendations / Next Steps** – what should be reviewed, confirmed, correlated clinically, or investigated further
+
+Keep the tone crisp and useful for a doctor reading the first response in a chat.
+Do not expose internal tool chatter or raw intermediate outputs in the final write-up.
+Think critically about tool outputs, resolve discrepancies when possible, and explicitly note uncertainty where needed.
 
 [EMPTY]

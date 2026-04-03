@@ -39,6 +39,9 @@ export function streamChatResponse(
   chatId: string,
   content: string,
   scanIds: string[],
+  options: {
+    displayContent?: string;
+  } | undefined,
   onEvent: (event: SSEEvent) => void,
   onComplete: () => void,
   onError: (error: Error) => void
@@ -58,6 +61,7 @@ export function streamChatResponse(
         body: JSON.stringify({
           content,
           scan_ids: scanIds,
+          display_content: options?.displayContent,
         }),
         signal: abortController.signal,
       });

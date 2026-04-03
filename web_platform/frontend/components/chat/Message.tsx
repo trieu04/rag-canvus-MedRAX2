@@ -12,7 +12,7 @@
 "use client";
 
 import { useState } from "react";
-import { User, Bot } from "lucide-react";
+import { User, Bot, Loader2 } from "lucide-react";
 import type { MessageWithDetails } from "../../lib/types/message";
 import { MessageActivity } from "./MessageActivity";
 import { classNames, formatDateTime } from "../../lib/utils";
@@ -93,6 +93,7 @@ interface MessageProps {
 export function Message({ message, onShowToolDetails }: MessageProps) {
   const isUser = message.role === "user";
   const isAssistant = message.role === "assistant";
+  const isStreamingPlaceholder = isAssistant && message.id.startsWith("temp-assistant-");
 
   // Extract final generated images for assistant messages
   const finalImages = isAssistant ? extractFinalImages(message) : [];
@@ -141,6 +142,13 @@ export function Message({ message, onShowToolDetails }: MessageProps) {
             {/* Render message content as Markdown for assistant, plain text for user */}
             {isUser ? (
               <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+            ) : !message.content.trim() && isStreamingPlaceholder ? (
+              <div className="flex items-center gap-2 text-sm text-zinc-400">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Preparing analysis...
+              </div>
+            ) : !message.content.trim() ? (
+              <div className="text-sm text-zinc-500 italic">No response content available.</div>
             ) : (
               <div className="text-sm prose prose-invert max-w-none">
                 <MarkdownRenderer content={message.content} />
