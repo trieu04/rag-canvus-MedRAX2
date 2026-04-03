@@ -195,6 +195,10 @@ hf_files/
 medrax-pdfs/
 model-weights/
 
+nohup.out
+web_platform/backend/backend.pid
+web_platform/backend/backend.info
+
 .DS_Store
 
 # benchmarking

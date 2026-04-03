@@ -2,6 +2,65 @@
 
 set -e
 
+# ──────────────────────────────────────────────────────────────────────────────
+# TMUX LAUNCHER
+# If this script is called from outside a tmux session it will:
+#   1. Kill any existing medrax-backend session
+#   2. Spin up a new detached tmux session that runs this script again (inside tmux)
+#   3. Print a summary of where to find logs, how to attach, and how to stop
+#
+# If already inside tmux (recursive call) it skips this block and starts normally.
+# ──────────────────────────────────────────────────────────────────────────────
+TMUX_SESSION="medrax-backend"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+LOG_DIR="$SCRIPT_DIR/backend/logs"
+LOG_FILE="$LOG_DIR/medrax_$(date +%Y%m%d).log"
+INFO_FILE="$SCRIPT_DIR/backend/backend.info"
+
+if [ -z "$TMUX" ]; then
+    mkdir -p "$LOG_DIR"
+
+    # Kill existing session cleanly if running
+    if tmux has-session -t "$TMUX_SESSION" 2>/dev/null; then
+        echo "Stopping existing medrax-backend session..."
+        tmux kill-session -t "$TMUX_SESSION"
+        sleep 2
+    fi
+
+    # Start new detached session — runs this same script inside tmux
+    tmux new-session -d -s "$TMUX_SESSION" "bash $SCRIPT_DIR/backend-prod.sh"
+
+    # Wait briefly so tmux has time to write the PID file
+    sleep 3
+
+    # Write a human-readable info file
+    {
+        echo "started_at=$(date '+%Y-%m-%d %H:%M:%S')"
+        echo "tmux_session=$TMUX_SESSION"
+        echo "log_file=$LOG_FILE"
+        echo "port=8787"
+    } > "$INFO_FILE"
+
+    echo ""
+    echo "=================================================="
+    echo " MedRAX Backend launched in tmux"
+    echo "=================================================="
+    echo ""
+    echo "  Session:  $TMUX_SESSION"
+    echo "  Logs:     $LOG_FILE"
+    echo "  Port:     8787"
+    echo ""
+    echo "  Attach:   tmux attach -t $TMUX_SESSION"
+    echo "  Tail logs: tail -f $LOG_FILE"
+    echo "  Stop:     tmux kill-session -t $TMUX_SESSION"
+    echo "            (or: pkill -f 'uvicorn app.main:app')"
+    echo ""
+    exit 0
+fi
+
+# ──────────────────────────────────────────────────────────────────────────────
+# From here down we are running INSIDE the tmux session
+# ──────────────────────────────────────────────────────────────────────────────
 echo "=================================================="
 echo "Starting MedRAX Backend Server (production helper)"
 echo "=================================================="
@@ -221,12 +280,33 @@ if [ -n "$MODEL_CACHE_DIR" ]; then
     echo "Model Cache: $MODEL_CACHE_DIR"
 fi
 echo ""
-echo "Press Ctrl+C to stop the server"
-echo "=================================================="
-echo ""
 
 # Start the server
 export EAGER_LOAD_TOOLS=0
 
+# All uvicorn stdout/stderr goes into the same daily log file that the Python
+# app already writes to via its file handler. That way there is one place for
+# every log line — no nohup.out, no separate file.
+mkdir -p logs
+LOG_FILE="logs/medrax_$(date +%Y%m%d).log"
+
+# Write PID + log path so the server can be found and stopped easily
+echo $$ > backend.pid
+{
+    echo "started_at=$(date '+%Y-%m-%d %H:%M:%S')"
+    echo "tmux_session=medrax-backend"
+    echo "pid=$$"
+    echo "log_file=$(pwd)/$LOG_FILE"
+    echo "port=$BACKEND_PORT"
+} > backend.info
+echo "   [OK] PID $$ — info written to backend/backend.info"
+echo "   [OK] All logs → $LOG_FILE"
+echo ""
+
 # Use 0.0.0.0 when running behind a reverse proxy / firewall for production
-uvicorn app.main:app --host "$BACKEND_HOST" --port "$BACKEND_PORT" --loop asyncio
+# stdout/stderr go to the log file; the Python logging file handler also writes
+# there, so all lines end up in one place without duplication.
+uvicorn app.main:app --host "$BACKEND_HOST" --port "$BACKEND_PORT" --loop asyncio 2>> "$LOG_FILE" 1>/dev/null
+
+# Clean up on exit
+rm -f backend.pid backend.info

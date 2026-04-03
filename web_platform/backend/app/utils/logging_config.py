@@ -57,6 +57,13 @@ def setup_logging(level: str = "INFO") -> logging.Logger:
     logger.addHandler(console_handler)
     logger.addHandler(file_handler)
 
+    # Also route uvicorn's own loggers (HTTP access, errors) to the same file
+    # so all logs end up in one place rather than stdout-only.
+    for uvicorn_logger_name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
+        uv_logger = logging.getLogger(uvicorn_logger_name)
+        if not any(isinstance(h, logging.FileHandler) for h in uv_logger.handlers):
+            uv_logger.addHandler(file_handler)
+
     return logger
 
 

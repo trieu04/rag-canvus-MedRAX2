@@ -79,7 +79,18 @@ _import_lock = threading.Lock()
 
 import os
 os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
-os.environ['TORCH_HOME'] = os.path.expanduser('~/.cache/torch')
+
+# Set cache dirs from config at module load time so that every import of
+# torch / transformers / huggingface_hub respects the project-local paths
+# configured in .env, rather than silently falling back to ~/.cache/*.
+_torch_cache = os.path.expanduser(settings.TORCH_CACHE_DIR)
+_hf_cache = os.path.expanduser(settings.HUGGINGFACE_CACHE_DIR)
+os.makedirs(_torch_cache, exist_ok=True)
+os.makedirs(_hf_cache, exist_ok=True)
+os.environ['TORCH_HOME'] = _torch_cache
+os.environ['HF_HOME'] = _hf_cache
+os.environ['TRANSFORMERS_CACHE'] = _hf_cache
+os.environ['HUGGINGFACE_HUB_CACHE'] = _hf_cache
 
 
 class ToolStatus:
