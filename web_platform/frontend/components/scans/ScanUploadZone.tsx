@@ -70,19 +70,24 @@ export function ScanUploadZone({ chatId, onUploadComplete, onUploadError }: Scan
   const handleFiles = (files: File[]) => {
     setError(null);
 
-    // Validate files
-    const validFiles: File[] = [];
-    for (const file of files) {
-      const validationError = validation.scanFile(file, UI_CONFIG.maxFileSize, UI_CONFIG.allowedFileTypes);
-      if (validationError) {
-        setError(validationError);
-        onUploadError?.(validationError);
-        return;
-      }
-      validFiles.push(file);
+    if (files.length === 0) return;
+
+    if (files.length > 1) {
+      const msg = "Only one scan can be uploaded at a time.";
+      setError(msg);
+      onUploadError?.(msg);
+      return;
     }
 
-    setSelectedFiles(validFiles);
+    const file = files[0];
+    const validationError = validation.scanFile(file, UI_CONFIG.maxFileSize, UI_CONFIG.allowedFileTypes);
+    if (validationError) {
+      setError(validationError);
+      onUploadError?.(validationError);
+      return;
+    }
+
+    setSelectedFiles([file]);
   };
 
   const handleUpload = async () => {
@@ -124,14 +129,13 @@ export function ScanUploadZone({ chatId, onUploadComplete, onUploadError }: Scan
       >
         <div className="flex flex-col items-center justify-center text-center">
           <Upload className={classNames("h-10 w-10 mb-3", isDragging ? "text-blue-500" : "text-zinc-500")} />
-          <p className="text-sm text-zinc-300 mb-1">Drag and drop scans here, or click to browse</p>
+          <p className="text-sm text-zinc-300 mb-1">Drag and drop a scan here, or click to browse</p>
           <p className="text-xs text-zinc-500">
             Supports DICOM, JPG, PNG (max {UI_CONFIG.maxFileSize / (1024 * 1024)}MB)
           </p>
 
           <input
             type="file"
-            multiple
             accept={UI_CONFIG.allowedFileExtensions.join(",")}
             onChange={handleFileInput}
             className="hidden"
@@ -150,7 +154,7 @@ export function ScanUploadZone({ chatId, onUploadComplete, onUploadError }: Scan
       {selectedFiles.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-zinc-300">Selected Files ({selectedFiles.length})</p>
+            <p className="text-sm font-medium text-zinc-300">Selected File</p>
             <button onClick={() => setSelectedFiles([])} className="text-xs text-red-400 hover:text-red-300">
               Clear All
             </button>
@@ -192,7 +196,7 @@ export function ScanUploadZone({ chatId, onUploadComplete, onUploadError }: Scan
                 Uploading...
               </span>
             ) : (
-              `Upload ${selectedFiles.length} ${selectedFiles.length === 1 ? "File" : "Files"}`
+              "Upload Scan"
             )}
           </button>
         </div>
