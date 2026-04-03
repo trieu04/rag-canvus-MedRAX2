@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 from ..models.message import Message
 from ..models.scan import Scan
 from ..models.tool_execution import ToolExecution, ToolExecutionLog, ToolExecutionResult
-from ..utils.file_utils import filesystem_path_from_display_url
+from ..utils.file_utils import filesystem_path_from_display_url, sanitize_fs_paths, sanitize_dict_paths
 from ..utils.logging_config import logger
 from ..config import resolve_upload_dir, resolve_generated_dir
 # from .image_registry import image_registry  # TODO: Re-enable when wrapper is fixed
@@ -249,6 +249,7 @@ class ChatProcessor:
                                     content_str = str(content)
                                 
                                 if content_str:
+                                    content_str = sanitize_fs_paths(content_str)
                                     yield {
                                         "type": "content_chunk",
                                         "data": {"content": content_str}
@@ -272,7 +273,7 @@ class ChatProcessor:
             logger.error(f"message_processing_error message_id={message.id[:8]} error={str(e)}", exc_info=True)
             yield {
                 "type": "error",
-                "message": f"Error: {str(e)}"
+                "message": f"Error: {sanitize_fs_paths(str(e))}"
             }
     
     async def _process_tool_execution(
@@ -342,27 +343,13 @@ class ChatProcessor:
                 except (ValueError, SyntaxError, TypeError):
                     result_data = {"raw": str(tool_message.content)}
             
-            # Normalize any image/file paths in result_data to display URLs before storing,
-            # so the frontend receives /medrax/... paths instead of raw filesystem paths.
-            if isinstance(result_data, dict):
-                normalized: dict = {}
-                for key, value in result_data.items():
-                    k = key.lower()
-                    # Match any key that mentions a path or visualization
-                    is_path_key = "path" in k or "visualization" in k
-                    if is_path_key:
-                        if isinstance(value, str) and value:
-                            normalized[key] = self._to_display_path(value)
-                        elif isinstance(value, list):
-                            normalized[key] = [
-                                self._to_display_path(v) if isinstance(v, str) and v else v
-                                for v in value
-                            ]
-                        else:
-                            normalized[key] = value
-                    else:
-                        normalized[key] = value
-                result_data = normalized
+            # Recursively rewrite every raw OS filesystem path string in result_data
+            # and metadata to canonical /medrax/... display URLs before storing or
+            # streaming.  This replaces the old key-name-based approach (which only
+            # caught top-level "path"/"visualization" keys) with a full deep scan so
+            # no path can leak regardless of key name or nesting depth.
+            result_data = sanitize_dict_paths(result_data)
+            metadata = sanitize_dict_paths(metadata)
 
             # Create result record
             if result_data is not None:
@@ -445,7 +432,7 @@ class ChatProcessor:
                     "tool_name": tool_name,
                     "execution_id": execution.id,
                     "message_id": execution.message_id,
-                    "error": str(e)
+                    "error": sanitize_fs_paths(str(e))
                 }
             }
             

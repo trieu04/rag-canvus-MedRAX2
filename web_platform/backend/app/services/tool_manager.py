@@ -7,11 +7,15 @@ Provides graceful degradation when tools are not available.
 
 import sys
 import importlib
+import threading
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime
-import re
 
+from langgraph.prebuilt import ToolNode
+from langchain_core.messages import ToolMessage
+
+from ..utils.file_utils import sanitize_fs_paths, sanitize_dict_paths
 from ..utils.logging_config import logger
 from ..utils.gpu_placement import select_tool_torch_device
 from ..config import settings
@@ -25,17 +29,57 @@ _NO_DEVICE_TOOL_CLASSES = frozenset(
         "WebBrowserTool",
     }
 )
-# from .image_registry import image_registry  # TODO: Re-enable when wrapper is fixed
-# from .tool_wrapper import wrap_tool_for_production  # TODO: Re-enable when wrapper is fixed
-import threading
+
+
+class PathSanitizingToolNode(ToolNode):
+    """
+    ToolNode subclass that rewrites raw OS filesystem paths in tool output to
+    canonical /medrax/... display URLs before the LLM sees them.
+
+    This is the root-cause fix for the 'Failed to load image' error: tools return
+    absolute paths like /home/.../generated/segmentation_xxx.png in their result
+    dicts.  LangGraph serialises those dicts into ToolMessage.content, the LLM
+    embeds them verbatim in its markdown response, and the browser then tries to
+    GET /home/... as a URL — which the API server rejects with 403.
+
+    By sanitising the content here we ensure the LLM only ever sees
+    /medrax/generated/... paths that the static-file handler can actually serve.
+    """
+
+    def _sanitize_message(self, msg: ToolMessage) -> ToolMessage:
+        if isinstance(msg.content, str):
+            msg.content = sanitize_fs_paths(msg.content)
+        elif isinstance(msg.content, list):
+            sanitized = []
+            for block in msg.content:
+                if isinstance(block, str):
+                    sanitized.append(sanitize_fs_paths(block))
+                elif isinstance(block, dict) and isinstance(block.get("text"), str):
+                    sanitized.append({**block, "text": sanitize_fs_paths(block["text"])})
+                else:
+                    sanitized.append(block)
+            msg.content = sanitized
+        return msg
+
+    def _run_one(self, call, input_type, config):
+        msg = super()._run_one(call, input_type, config)
+        if isinstance(msg, ToolMessage):
+            msg = self._sanitize_message(msg)
+        return msg
+
+    async def _arun_one(self, call, input_type, config):
+        msg = await super()._arun_one(call, input_type, config)
+        if isinstance(msg, ToolMessage):
+            msg = self._sanitize_message(msg)
+        return msg
+
 
 # Global lock for thread-safe imports to prevent Python import deadlocks
 _import_lock = threading.Lock()
 
-# Set PyTorch environment for better compatibility
 import os
-os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'  # Enable MPS fallback to CPU if needed
-os.environ['TORCH_HOME'] = os.path.expanduser('~/.cache/torch')  # Set cache location
+os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
+os.environ['TORCH_HOME'] = os.path.expanduser('~/.cache/torch')
 
 
 class ToolStatus:
@@ -983,12 +1027,15 @@ class ToolManager:
                         logger.info("[OK] Created shared checkpointer (dev mode)")
                     checkpointer = self.checkpointer
                 
-                # Create agent with memory
+                # Create agent with memory, using a path-sanitizing tool node so
+                # raw OS filesystem paths are never visible in ToolMessage content.
+                sanitizing_tool_node = PathSanitizingToolNode(tool_instances)
                 agent = Agent(
                     model=model,
                     tools=tool_instances,
                     checkpointer=checkpointer,
-                    system_prompt=system_prompt or self._get_default_system_prompt()
+                    system_prompt=system_prompt or self._get_default_system_prompt(),
+                    tool_node=sanitizing_tool_node,
                 )
                 
                 # Only store as instance if NOT using request_id (for dev/testing)

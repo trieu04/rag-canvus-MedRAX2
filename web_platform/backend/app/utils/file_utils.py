@@ -5,8 +5,10 @@ File handling and upload utilities.
 """
 
 import logging
+import re
 import uuid
 from pathlib import Path
+from typing import Any
 
 import aiofiles
 import numpy as np
@@ -179,6 +181,35 @@ def to_display_path(path: str) -> str:
     except (ValueError, OSError):
         pass
     return path
+
+
+# Matches absolute OS filesystem paths that cannot be served as web assets.
+# Used to scrub raw paths from any text or structured data before it leaves the backend.
+_FS_PATH_RE = re.compile(r'(?<!\w)(/(?:home|var|tmp|Users|root|opt|srv)/[^\s\'",\]\)>\\]+)')
+
+
+def sanitize_fs_paths(text: str) -> str:
+    """Replace raw OS filesystem paths in a string with canonical /medrax/... display URLs.
+
+    Safe to call on strings that contain no filesystem paths — returned unchanged.
+    """
+    return _FS_PATH_RE.sub(lambda m: to_display_path(m.group(1)), text)
+
+
+def sanitize_dict_paths(obj: Any) -> Any:
+    """Recursively sanitize raw OS filesystem paths in any dict/list/string structure.
+
+    Walks the entire object graph and replaces every raw filesystem path string
+    with its canonical /medrax/... display URL.  Other types (int, bool, None, …)
+    pass through unchanged.
+    """
+    if isinstance(obj, str):
+        return sanitize_fs_paths(obj)
+    if isinstance(obj, dict):
+        return {k: sanitize_dict_paths(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [sanitize_dict_paths(item) for item in obj]
+    return obj
 
 
 def is_generated_tool_image_path(path: str) -> bool:

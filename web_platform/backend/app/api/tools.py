@@ -25,7 +25,7 @@ from ..dependencies import get_current_doctor
 from ..services.tool_manager import tool_manager
 from ..utils.logging_config import logger
 from ..utils.tool_registry import get_tool_registry
-from ..utils.file_utils import to_display_path
+from ..utils.file_utils import to_display_path, sanitize_dict_paths
 
 router = APIRouter()
 
@@ -197,6 +197,20 @@ def get_execution_detail(
     execution_dict = enrich_tool_execution(execution)
     execution_data = ToolExecutionResponse(**execution_dict)
     logs_data = [ToolExecutionLogResponse.model_validate(log) for log in execution.logs]
-    result_data = ToolExecutionResultResponse.model_validate(execution.result) if execution.result else None
+
+    result_data = None
+    if execution.result:
+        # Sanitize result JSON before sending to frontend — handles legacy DB rows
+        # that were stored before PathSanitizingToolNode was introduced.
+        result = execution.result
+        sanitized_result_data = sanitize_dict_paths(result.result_data or {})
+        sanitized_metadata = sanitize_dict_paths(result.result_metadata or {})
+        result_data = ToolExecutionResultResponse(
+            id=result.id,
+            execution_id=result.execution_id,
+            result_data=sanitized_result_data,
+            result_metadata=sanitized_metadata,
+            created_at=result.created_at,
+        )
 
     return ToolExecutionDetailResponse(execution=execution_data, logs=logs_data, result=result_data)

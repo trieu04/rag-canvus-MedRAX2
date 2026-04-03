@@ -134,7 +134,11 @@ export function MarkdownRenderer({ content, className = "" }: MarkdownRendererPr
             // Normalize backend image paths to include API base URL
             // src can be string or Blob - only process if string
             const srcString = typeof src === "string" ? src : undefined;
-            const resolvedSrc = srcString ? getImageUrl(srcString) ?? srcString : undefined;
+            // getImageUrl returns null for unresolvable paths (e.g. raw OS filesystem paths).
+            // Do NOT fall back to the raw string — it would cause the browser to issue a
+            // request like GET /home/user/... which the API server blocks with 403 and
+            // triggers the onError handler unnecessarily. Undefined means no <img> src.
+            const resolvedSrc = srcString ? getImageUrl(srcString) ?? undefined : undefined;
             return (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img

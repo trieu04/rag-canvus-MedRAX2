@@ -20,7 +20,7 @@ from ..schemas.tool import ToolExecutionResponse
 from ..dependencies import get_current_doctor
 from ..utils.sse import create_sse_event
 from ..utils.logging_config import logger
-from ..utils.file_utils import to_display_path
+from ..utils.file_utils import to_display_path, sanitize_fs_paths
 from ..services.tool_manager import tool_manager
 from ..services.chat_processor import ChatProcessor
 # from ..services.image_registry import image_registry  # TODO: Re-enable when wrapper is fixed
@@ -86,6 +86,11 @@ def list_messages(
     messages_with_details = []
     for msg in messages:
         msg_dict = MessageResponse.model_validate(msg).model_dump()
+        # Sanitize message content on the way out so that any raw OS filesystem
+        # paths stored in old messages (before PathSanitizingToolNode was
+        # introduced) are converted to canonical /medrax/... display URLs.
+        # This ensures images in old messages render correctly in the frontend.
+        msg_dict["content"] = sanitize_fs_paths(msg_dict["content"])
         msg_dict["attached_scans"] = [ScanResponse.model_validate(scan) for scan in msg.attached_scans]
         msg_dict["tool_executions"] = [ToolExecutionResponse(**enrich_tool_execution(ex)) for ex in msg.tool_executions]
         messages_with_details.append(MessageWithDetails(**msg_dict))
@@ -275,7 +280,7 @@ def get_message_executions(
     if not message:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
 
-    return [ToolExecutionResponse.model_validate(ex) for ex in message.tool_executions]
+    return [ToolExecutionResponse(**enrich_tool_execution(ex)) for ex in message.tool_executions]
 
 
 

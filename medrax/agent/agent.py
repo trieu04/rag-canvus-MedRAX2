@@ -44,6 +44,7 @@ class Agent:
         tools: List[BaseTool],
         checkpointer: Any = None,
         system_prompt: str = "",
+        tool_node: Optional[Any] = None,
     ):
         """
         Initialize the Agent.
@@ -53,11 +54,12 @@ class Agent:
             tools (List[BaseTool]): A list of available tools.
             checkpointer (Any, optional): State persistence manager. Defaults to None.
             system_prompt (str, optional): System instructions. Defaults to "".
+            tool_node (Any, optional): Custom tool execution node. Defaults to ToolNode(tools).
         """
         self.system_prompt = system_prompt
 
-        # Create the parallel tool execution node
-        self.tool_node = ToolNode(tools)
+        # Use provided tool_node or create the default parallel execution node
+        self.tool_node = tool_node if tool_node is not None else ToolNode(tools)
 
         # Define the agent workflow with parallel tool execution
         workflow = StateGraph(AgentState)

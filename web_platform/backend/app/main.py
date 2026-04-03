@@ -5,6 +5,7 @@ FastAPI application with all routes, middleware, and configuration.
 """
 
 import logging
+import re
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -12,6 +13,10 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from pathlib import Path
 import time
+
+# Pre-compiled pattern for detecting OS filesystem paths used as URL paths.
+# These paths can never be served by this API and indicate a bug upstream.
+_OS_PATH_IN_URL_RE = re.compile(r'^/(?:home|var|tmp|Users|root|opt|srv)/')
 
 from .config import (
     settings,
@@ -63,6 +68,25 @@ async def validate_api_secret(request: Request, call_next):
     # Allow CORS preflight requests (OPTIONS)
     if request.method == "OPTIONS":
         return await call_next(request)
+
+    # Reject requests whose URL path looks like an OS filesystem path
+    # (e.g. /home/user/..., /var/...).  These can never be served by this API
+    # and only appear when a raw filesystem path leaked into a URL somewhere in
+    # the frontend or LLM output.  Returning 400 here gives a clear signal to
+    # developers and prevents the confusing "403 Missing API secret" log noise.
+    if _OS_PATH_IN_URL_RE.match(request.url.path):
+        logger.error(
+            f"🐛 OS filesystem path used as URL — this is a bug: "
+            f"{request.method} {request.url.path} from "
+            f"{request.client.host if request.client else 'unknown'}"
+        )
+        return JSONResponse(
+            status_code=400,
+            content={
+                "detail": "Invalid request: OS filesystem paths cannot be used as URLs. This is a bug — please report it.",
+                "error": "bad_request",
+            },
+        )
 
     # Whitelist public endpoints that don't require API secret
     public_paths = [
