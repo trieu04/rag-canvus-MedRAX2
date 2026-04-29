@@ -81,6 +81,19 @@ def run_tool(tool_id: str, args: argparse.Namespace) -> Tuple[Dict[str, Any], Di
         from medrax.tools.rag import RAGTool, RAGConfig
         config = RAGConfig()
         return RAGTool(config=config)._run(args.query)
+    if tool_id == "canvus_rag_lookup":
+        from medrax.tools.canvus_rag import CanvusRAGLookupTool
+        return CanvusRAGLookupTool(
+    base_url=os.getenv("RAG_CANVUS_API_BASE_URL", "http://localhost:8600"),
+            timeout_seconds=int(os.getenv("RAG_CANVUS_TIMEOUT_SECONDS", "30")),
+        )._run(
+            question=args.query or args.question,
+            canvas_id=args.canvas_id,
+            remote_canvas_id=args.remote_canvas_id,
+            mode=args.mode,
+            top_k=args.top_k,
+            request_id=args.request_id,
+        )
     if tool_id == "duckduckgo_search":
         from medrax.tools.browsing.duckduckgo import DuckDuckGoSearchTool
         return DuckDuckGoSearchTool()._run(args.query)
@@ -121,6 +134,11 @@ def main() -> int:
     parser.add_argument("--question", help="Question (LLaVA-Med)")
     parser.add_argument("--phrase", help="Phrase for grounding")
     parser.add_argument("--query", help="Query for RAG/search")
+    parser.add_argument("--canvas-id", type=int, help="Internal canvas ID for canvus_rag_lookup")
+    parser.add_argument("--remote-canvas-id", help="Remote canvas ID for canvus_rag_lookup")
+    parser.add_argument("--mode", default="hybrid", help="Retrieval mode for canvus_rag_lookup")
+    parser.add_argument("--top-k", type=int, default=10, help="Context size for canvus_rag_lookup")
+    parser.add_argument("--request-id", help="Correlation ID for canvus_rag_lookup")
     parser.add_argument("--url", help="URL for web_browser")
     parser.add_argument("--organs", nargs="*", help="Organs list for segmentation")
     parser.add_argument("--prompt-type", default="auto", help="medsam2 prompt type: box|point|auto")

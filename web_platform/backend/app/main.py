@@ -95,6 +95,7 @@ async def validate_api_secret(request: Request, call_next):
         "/redoc",  # ReDoc documentation
         "/openapi.json",  # OpenAPI schema
         "/api/system/validate-secret",  # API secret validation endpoint
+        "/api/system/orchestrate-query",  # Service-token protected orchestration endpoint
         "/",  # Root endpoint
     ]
 

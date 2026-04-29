@@ -4,7 +4,7 @@ Tool Testing API Routes
 Direct endpoints for testing individual tools with their exact inputs/outputs.
 No authentication required - for local development only.
 
-Access the interactive docs at: http://localhost:8000/docs#/tool-testing
+Access the interactive docs at: http://localhost:8610/docs#/tool-testing
 """
 
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
@@ -57,6 +57,53 @@ def convert_numpy_types(obj):
         return tuple(convert_numpy_types(item) for item in obj)
     else:
         return obj
+
+
+# ============================================================================
+# RETRIEVAL TOOLS
+# ============================================================================
+
+
+class CanvusRAGLookupInput(BaseModel):
+    """Input for Canvus RAG lookup tool."""
+
+    question: str = Field(..., description="Question to ask against apps/api retrieval")
+    canvas_id: Optional[int] = Field(default=None, description="Internal canvas ID")
+    remote_canvas_id: Optional[str] = Field(default=None, description="Remote Canvus canvas ID")
+    mode: str = Field(default="hybrid", description="Retrieval mode")
+    top_k: int = Field(default=10, description="Maximum context size")
+    request_id: Optional[str] = Field(default=None, description="Optional correlation ID")
+
+
+@router.post(
+    "/canvus_rag_lookup",
+    summary="Test Canvus RAG Lookup",
+    description="Look up canvas-scoped knowledge from apps/api retrieval endpoints",
+    tags=["retrieval"],
+)
+async def test_canvus_rag_lookup(input_data: CanvusRAGLookupInput):
+    """Test Canvus RAG lookup tool directly."""
+    try:
+        tool = tool_manager.get_tool("canvus_rag_lookup")
+        if not tool or tool.status != "loaded":
+            raise HTTPException(status_code=503, detail="Canvus RAG lookup tool not loaded")
+
+        result = tool.instance._run(
+            question=input_data.question,
+            canvas_id=input_data.canvas_id,
+            remote_canvas_id=input_data.remote_canvas_id,
+            mode=input_data.mode,
+            top_k=input_data.top_k,
+            request_id=input_data.request_id,
+        )
+        converted_result = convert_numpy_types(result[0])
+        converted_metadata = convert_numpy_types(result[1])
+        return {"success": True, "result": converted_result, "metadata": converted_metadata}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Canvus RAG lookup test error: {e}\n{traceback.format_exc()}")
+        return {"success": False, "error": str(e)}
 
 
 # ============================================================================

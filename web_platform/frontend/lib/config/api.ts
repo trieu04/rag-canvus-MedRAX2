@@ -4,7 +4,7 @@
  * Central configuration for API base URL and settings.
  */
 
-const rawBaseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const rawBaseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8610";
 const normalizedBaseURL = rawBaseURL.replace(/\/+$/, "");
 
 export const API_CONFIG = {

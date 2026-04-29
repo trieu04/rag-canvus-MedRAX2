@@ -9,5 +9,6 @@ from .xray_generation import *
 from .dicom import *
 from .utils import *
 from .rag import *
+from .canvus_rag import *
 from .browsing import *
 from .python_tool import *

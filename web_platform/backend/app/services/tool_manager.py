@@ -19,6 +19,7 @@ from ..config import settings
 _NO_DEVICE_TOOL_CLASSES = frozenset(
     {
         "RAGTool",
+        "CanvusRAGLookupTool",
         "DicomProcessorTool",
         "ImageVisualizerTool",
         "DuckDuckGoSearchTool",
@@ -300,6 +301,16 @@ class ToolManager:
                 tool_class="RAGTool",
                 module_path="medrax.tools.rag",
                 dependencies=["langchain"],
+                requires_gpu=False
+            ),
+            ToolInfo(
+                id="canvus_rag_lookup",
+                name="Canvus RAG Lookup",
+                description="Looks up canvas-scoped knowledge from the apps/api RAG service and returns normalized multimodal retrieval output.",
+                category="retrieval",
+                tool_class="CanvusRAGLookupTool",
+                module_path="medrax.tools.canvus_rag",
+                dependencies=["httpx"],
                 requires_gpu=False
             ),
             ToolInfo(
@@ -807,6 +818,12 @@ class ToolManager:
                 
                 logger.info(f"Creating ArcPlusClassifierTool")
                 return tool_class(**arcplus_kwargs), device_str
+            elif tool.tool_class == "CanvusRAGLookupTool":
+                logger.info("Creating CanvusRAGLookupTool")
+                return tool_class(
+                    base_url=settings.RAG_CANVUS_API_BASE_URL,
+                    timeout_seconds=settings.RAG_CANVUS_TIMEOUT_SECONDS,
+                ), None
             else:
                 if tool.tool_class in _NO_DEVICE_TOOL_CLASSES:
                     return tool_class(), None

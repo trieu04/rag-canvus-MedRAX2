@@ -234,6 +234,33 @@ TOOL_UI_REGISTRY: List[Dict[str, Any]] = [
         ],
     },
     {
+        "tool_name": "canvus_rag_lookup",
+        "display_name": "Canvus RAG Lookup",
+        "category": "retrieval",
+        "panel": "RAGPanel",
+        "description": "Looks up canvas-scoped knowledge from the apps/api retrieval service and returns normalized content blocks.",
+        "input_schema": {
+            "question": "string (required)",
+            "canvas_id": "number (optional)",
+            "remote_canvas_id": "string (optional)",
+            "mode": "string (optional)",
+            "top_k": "number (optional)",
+            "request_id": "string (optional)"
+        },
+        "output_schema": {
+            "answer": "string",
+            "content_blocks": "object[]",
+            "sources": "object[]",
+            "context": "object[]",
+            "edges": "object[]"
+        },
+        "notes": [
+            "Either canvas_id or remote_canvas_id is required.",
+            "Bounding boxes are only returned if upstream retrieval/orchestration provides grounded visual blocks.",
+            "Errors return {'error': '...'} in output.",
+        ],
+    },
+    {
         "tool_name": "duckduckgo_search",
         "display_name": "DuckDuckGo Search",
         "category": "retrieval",
@@ -323,6 +350,10 @@ PREVIEW_FIELDS: Dict[str, Dict[str, Any]] = {
         "output_preview": {"image_paths": ["image_path"]},
     },
     "medical_knowledge_rag": {
+        "input_preview": {"image_paths": []},
+        "output_preview": {"image_paths": []},
+    },
+    "canvus_rag_lookup": {
         "input_preview": {"image_paths": []},
         "output_preview": {"image_paths": []},
     },
