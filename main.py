@@ -318,7 +318,7 @@ def parse_arguments():
     
     # API server options
     parser.add_argument("--api-host", default="0.0.0.0", help="API host address")
-    parser.add_argument("--api-port", type=int, default=8000, help="API port")
+    parser.add_argument("--api-port", type=int, default=7210, help="API port")
     parser.add_argument("--public", action="store_true", help="Make API publicly accessible via ngrok tunnel")
 
     # Model and system configuration

@@ -84,7 +84,7 @@ def run_tool(tool_id: str, args: argparse.Namespace) -> Tuple[Dict[str, Any], Di
     if tool_id == "canvus_rag_lookup":
         from medrax.tools.canvus_rag import CanvusRAGLookupTool
         return CanvusRAGLookupTool(
-    base_url=os.getenv("RAG_CANVUS_API_BASE_URL", "http://localhost:8600"),
+            base_url=os.getenv("RAG_CANVUS_API_BASE_URL", "http://localhost:7200"),
             timeout_seconds=int(os.getenv("RAG_CANVUS_TIMEOUT_SECONDS", "30")),
         )._run(
             question=args.query or args.question,

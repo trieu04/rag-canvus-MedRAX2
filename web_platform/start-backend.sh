@@ -184,7 +184,7 @@ echo "=================================================="
 echo "Starting server..."
 echo "=================================================="
 echo ""
-BACKEND_PORT="${BACKEND_PORT:-8000}"
+BACKEND_PORT="${BACKEND_PORT:-7210}"
 
 echo "Backend will be available at:"
 echo "  API: http://localhost:$BACKEND_PORT"

@@ -33,10 +33,10 @@ class CanvusRAGLookupTool(BaseTool):
     )
     args_schema: Type[BaseModel] = CanvusRAGLookupInput
 
-    base_url: str = "http://localhost:8600"
+    base_url: str = "http://localhost:7200"
     timeout_seconds: int = 30
 
-    def __init__(self, base_url: str = "http://localhost:8600", timeout_seconds: int = 30):
+    def __init__(self, base_url: str = "http://localhost:7200", timeout_seconds: int = 30):
         super().__init__()
         self.base_url = base_url.rstrip("/")
         self.timeout_seconds = timeout_seconds

@@ -56,12 +56,12 @@ fi
 if [ ! -f "frontend/.env.local" ]; then
     echo ""
     echo "Creating .env.local..."
-    echo "NEXT_PUBLIC_API_URL=http://localhost:8610" > frontend/.env.local
+    echo "NEXT_PUBLIC_API_URL=http://localhost:7210" > frontend/.env.local
     echo "   Created .env.local with default API URL"
 fi
 
 # Resolve API URL from frontend/.env.local (fallback to localhost)
-API_URL="http://localhost:8610"
+API_URL="http://localhost:7210"
 if [ -f "frontend/.env.local" ]; then
     ENV_API_URL=$(rg -n "^NEXT_PUBLIC_API_URL=" frontend/.env.local | awk -F'=' '{print $2}' | tail -n 1)
     if [ -n "$ENV_API_URL" ]; then
@@ -75,7 +75,7 @@ echo "=============================================="
 echo "Starting Next.js with hot reload..."
 echo ""
 echo "Frontend will be available at:"
-echo "  http://localhost:8630"
+echo "  http://localhost:7211"
 echo ""
 echo "API Backend: $API_URL"
 echo ""
@@ -88,4 +88,4 @@ echo ""
 
 # Start frontend
 cd frontend
-exec npm run dev -- --port 8630
+exec npm run dev -- --port 7211

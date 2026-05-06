@@ -4,7 +4,7 @@ Tool Testing API Routes
 Direct endpoints for testing individual tools with their exact inputs/outputs.
 No authentication required - for local development only.
 
-Access the interactive docs at: http://localhost:8610/docs#/tool-testing
+Access the interactive docs at: http://localhost:7210/docs#/tool-testing
 """
 
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form

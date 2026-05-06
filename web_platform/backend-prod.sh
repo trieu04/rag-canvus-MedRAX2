@@ -38,7 +38,7 @@ if [ -z "$TMUX" ]; then
         echo "started_at=$(date '+%Y-%m-%d %H:%M:%S')"
         echo "tmux_session=$TMUX_SESSION"
         echo "log_file=$LOG_FILE"
-        echo "port=8787"
+        echo "port=7210"
     } > "$INFO_FILE"
 
     echo ""
@@ -48,7 +48,7 @@ if [ -z "$TMUX" ]; then
     echo ""
     echo "  Session:  $TMUX_SESSION"
     echo "  Logs:     $LOG_FILE"
-    echo "  Port:     8787"
+    echo "  Port:     7210"
     echo ""
     echo "  Attach:   tmux attach -t $TMUX_SESSION"
     echo "  Tail logs: tail -f $LOG_FILE"
@@ -264,8 +264,7 @@ echo ""
 
 # Allow host/port overrides with safer production defaults
 BACKEND_HOST=${HOST:-0.0.0.0}
-# Use a less-common port by default to reduce generic scans (override via PORT)
-BACKEND_PORT=${PORT:-8787}
+BACKEND_PORT=${PORT:-7210}
 
 echo "Backend will be available at:"
 echo "  API: http://${BACKEND_HOST}:${BACKEND_PORT}"

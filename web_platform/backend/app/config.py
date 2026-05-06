@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
     HOST: str = "127.0.0.1"
-    PORT: int = 8610
+    PORT: int = 7210
 
     # Database
     DATABASE_URL: str = "sqlite:///./medrax.db"
@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     MEDRAX_SERVICE_TOKEN: str = ""
 
     # CORS
-    CORS_ORIGINS: Union[str, List[str]] = "http://localhost:8630,http://127.0.0.1:8630,http://localhost:8617,http://127.0.0.1:8617"
+    CORS_ORIGINS: Union[str, List[str]] = "http://localhost:7211,http://127.0.0.1:7211"
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
@@ -52,7 +52,7 @@ class Settings(BaseSettings):
             return [origin.strip() for origin in v.split(",") if origin.strip()]
         if isinstance(v, list):
             return v
-        return ["http://localhost:8630", "http://localhost:8617"]
+        return ["http://localhost:7211"]
 
     # On-disk data root: ``medrax_data/uploads`` and ``medrax_data/generated`` (see resolve_* helpers).
     # Set to an absolute path to relocate all MedRAX file storage.
@@ -91,7 +91,7 @@ class Settings(BaseSettings):
     TOOL_TIMEOUT: int = 300  # 5 minutes
     MAX_CONCURRENT_TOOLS: int = 3
     AUTO_UNLOAD_TOOLS: bool = False
-    RAG_CANVUS_API_BASE_URL: str = "http://localhost:8600"
+    RAG_CANVUS_API_BASE_URL: str = "http://localhost:7200"
     RAG_CANVUS_TIMEOUT_SECONDS: int = 30
 
     # Device Configuration for Medical Imaging Tools
