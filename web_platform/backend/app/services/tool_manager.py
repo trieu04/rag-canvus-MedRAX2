@@ -7,6 +7,7 @@ Provides graceful degradation when tools are not available.
 
 import sys
 import importlib
+import re
 import threading
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
@@ -67,7 +68,7 @@ class ToolInfo:
         category: str,
         tool_class: str,
         module_path: str,
-        dependencies: List[str] = None,
+        dependencies: Optional[List[str]] = None,
         requires_gpu: bool = False,
     ):
         self.id = id
@@ -121,6 +122,7 @@ class ToolManager:
         self.agent_instance = None
         self.checkpointer = None
         self.chat_checkpointers = {}  # Per-chat checkpointers for isolation
+        self.last_agent_error: Optional[str] = None
         
         # Try to add MedRAX to path
         self._setup_medrax_path()
@@ -937,8 +939,52 @@ class ToolManager:
             if tool.status == ToolStatus.LOADED and tool.instance:
                 return True
         return False
+
+    def _create_default_model(self):
+        """Create the configured chat model for the MedRAX agent."""
+        from ..config import settings
+
+        model_name = settings.MEDRAX_AGENT_MODEL.strip() or "gemini-2.5-pro"
+        if model_name.startswith(("gpt-", "chatgpt-")):
+            from langchain_openai import ChatOpenAI
+            from pydantic import SecretStr
+
+            openai_api_key = settings.OPENAI_API_KEY.strip()
+            if not openai_api_key:
+                raise ValueError("OPENAI_API_KEY is not configured for MedRAX GPT agent model")
+
+            return ChatOpenAI(
+                model=model_name,
+                api_key=SecretStr(openai_api_key),
+                base_url=settings.OPENAI_BASE_URL,
+                temperature=0,
+            )
+
+        if model_name.startswith("gemini-"):
+            from langchain_google_genai import ChatGoogleGenerativeAI
+
+            google_api_key = settings.GOOGLE_API_KEY.strip()
+            if not google_api_key:
+                raise ValueError("GOOGLE_API_KEY is not configured for MedRAX Gemini agent model")
+
+            return ChatGoogleGenerativeAI(
+                model=model_name,
+                google_api_key=google_api_key,
+                temperature=0,
+            )
+
+        raise ValueError(
+            f"Unsupported MEDRAX_AGENT_MODEL '{model_name}'. Use a gpt-*, chatgpt-*, or gemini-* model."
+        )
     
-    def create_agent(self, model=None, system_prompt: str = "", force_recreate: bool = False, request_id: str = None, chat_id: str = None):
+    def create_agent(
+        self,
+        model=None,
+        system_prompt: str = "",
+        force_recreate: bool = False,
+        request_id: Optional[str] = None,
+        chat_id: Optional[str] = None,
+    ):
         """
         Create MedRAX agent with loaded tools and memory persistence.
         Thread-safe with locking to prevent concurrent agent creation.
@@ -953,8 +999,10 @@ class ToolManager:
         Returns:
             Agent instance or None if not available
         """
+        self.last_agent_error = None
         if not self.is_agent_ready():
             logger.warning("Cannot create agent: no tools loaded")
+            self.last_agent_error = "No MedRAX tools are currently loaded. Please load at least one tool in Settings → Tools Management."
             return None
         
         # Use lock to prevent concurrent agent creation
@@ -970,17 +1018,11 @@ class ToolManager:
             
             try:
                 from medrax.agent import Agent
-                from langchain_google_genai import ChatGoogleGenerativeAI
                 from langgraph.checkpoint.memory import MemorySaver
-                from ..config import settings
                 
-                # Use provided model or create default (Gemini 2.5 Pro)
+                # Use provided model or create configured default model.
                 if model is None:
-                    model = ChatGoogleGenerativeAI(
-                        model="gemini-2.5-pro",
-                        api_key=settings.GOOGLE_API_KEY,
-                        temperature=0
-                    )
+                    model = self._create_default_model()
                 
                 # Get loaded tool instances - wrapped if request_id provided
                 if request_id:
@@ -988,6 +1030,7 @@ class ToolManager:
                     logger.info(f"Using wrapped tools for request {request_id[:8]}: {len(tool_instances)} tools")
                     if not tool_instances:
                         logger.error(f"No wrapped tools available for request {request_id[:8]}")
+                        self.last_agent_error = "No loaded MedRAX tool instances are available for this request."
                         return None
                 else:
                     tool_instances = self.get_loaded_tools()
@@ -1024,6 +1067,7 @@ class ToolManager:
                 return agent
                 
             except Exception as e:
+                self.last_agent_error = str(e)
                 logger.error(f"Failed to create agent: {e}")
                 return None
     

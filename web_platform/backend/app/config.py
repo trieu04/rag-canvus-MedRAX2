@@ -64,6 +64,7 @@ class Settings(BaseSettings):
     ALLOWED_EXTENSIONS: set = {"jpg", "jpeg", "png", "gif", "dcm", "dicom"}
 
     # AI/ML API Keys
+    MEDRAX_AGENT_MODEL: str = "gemini-2.5-pro"
     OPENAI_API_KEY: str = ""
     OPENAI_BASE_URL: str = "https://api.openai.com/v1"
     GOOGLE_API_KEY: str = ""

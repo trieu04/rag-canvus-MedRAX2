@@ -203,10 +203,10 @@ async def stream_chat_response(
             agent = tool_manager.create_agent(request_id=request_id, chat_id=chat_id)
 
             if agent is None:
-                # No tools loaded - send error
-                error_msg = (
-                    "No MedRAX tools are currently loaded. Please load at least one tool in Settings → Tools Management."
-                )
+                # Agent creation can fail because no tools are loaded or because
+                # the configured LLM provider is missing credentials. Preserve
+                # the specific backend reason instead of always blaming tools.
+                error_msg = tool_manager.last_agent_error or "Failed to initialize the MedRAX chat agent."
                 yield create_sse_event("error", error=error_msg)
                 assistant_message.content = error_msg
                 db.commit()
@@ -299,6 +299,5 @@ def get_message_executions(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
 
     return [ToolExecutionResponse(**enrich_tool_execution(ex)) for ex in message.tool_executions]
-
 
 

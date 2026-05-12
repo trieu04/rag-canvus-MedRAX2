@@ -295,7 +295,7 @@ async def orchestrate_query(
         ),
     )
     if agent is None:
-        raise HTTPException(status_code=503, detail="No MedRAX tools are loaded")
+        raise HTTPException(status_code=503, detail=tool_manager.last_agent_error or "Failed to initialize MedRAX agent")
 
     attachment_paths, warnings = _resolve_attachment_paths(payload.attachments)
     agent_messages: list[dict[str, Any]] = []
