@@ -16,6 +16,7 @@ class CanvusRAGLookupInput(BaseModel):
     mode: str = Field(default="hybrid", description="Retrieval mode to pass to apps/api")
     top_k: int = Field(default=10, ge=1, description="Maximum number of context nodes to return")
     request_id: str | None = Field(default=None, description="Optional correlation ID propagated across services")
+    include_images: bool = Field(default=False, description="Also return image content blocks extracted from top matching document chunks")
 
     @model_validator(mode="after")
     def validate_canvas_identity(self) -> "CanvusRAGLookupInput":
@@ -29,7 +30,8 @@ class CanvusRAGLookupTool(BaseTool):
     description: str = (
         "Looks up canvas-scoped knowledge from the apps/api RAG service. "
         "Use this when you need grounded supporting knowledge tied to a specific Canvus canvas. "
-        "Requires either canvas_id or remote_canvas_id. Returns answer, multimodal content blocks, citations, graph context, and metadata."
+        "Requires either canvas_id or remote_canvas_id. Returns answer, multimodal content blocks, citations, graph context, and metadata. "
+        "When include_images is true, also returns image content blocks extracted from the top matching document chunks."
     )
     args_schema: Type[BaseModel] = CanvusRAGLookupInput
 
@@ -54,6 +56,7 @@ class CanvusRAGLookupTool(BaseTool):
             "mode": payload.mode,
             "top_k": payload.top_k,
             "request_id": payload.request_id,
+            "include_images": payload.include_images,
         }
 
         try:
@@ -85,6 +88,7 @@ class CanvusRAGLookupTool(BaseTool):
                 "canvas_id": result.get("canvas_id", payload.canvas_id),
                 "remote_canvas_id": result.get("remote_canvas_id", payload.remote_canvas_id),
                 "confidence": result.get("confidence"),
+                "images": result.get("images", []),
             }
             return output, metadata
         except Exception as exc:
@@ -111,6 +115,7 @@ class CanvusRAGLookupTool(BaseTool):
         mode: str = "hybrid",
         top_k: int = 10,
         request_id: str | None = None,
+        include_images: bool = False,
         run_manager: CallbackManagerForToolRun | None = None,
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         payload = CanvusRAGLookupInput(
@@ -120,6 +125,7 @@ class CanvusRAGLookupTool(BaseTool):
             mode=mode,
             top_k=top_k,
             request_id=request_id,
+            include_images=include_images,
         )
         return self._request(payload)
 
@@ -131,6 +137,7 @@ class CanvusRAGLookupTool(BaseTool):
         mode: str = "hybrid",
         top_k: int = 10,
         request_id: str | None = None,
+        include_images: bool = False,
         run_manager: AsyncCallbackManagerForToolRun | None = None,
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         return self._run(
@@ -140,4 +147,5 @@ class CanvusRAGLookupTool(BaseTool):
             mode=mode,
             top_k=top_k,
             request_id=request_id,
+            include_images=include_images,
         )
